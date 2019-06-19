@@ -1,19 +1,16 @@
-module.exports = {
-  tokenize
+const { getErrorFormatter } = require('./util')
+
+const ESCAPED = {
+  '\\\\': '\\',
+  '\\"': '"',
+  '\\\'': "'",
+  '\\{{': '{{'
 }
 
-const ESCAPED = [
-  ['\\t', '\t'],
-  ['\\v', '\v'],
-  ['\\0', '\0'],
-  ['\\b', '\b'],
-  ['\\f', '\f'],
-  ['\\n', '\n'],
-  ['\\r', '\r'],
-  ['\\"', '"'],
-  ['\\\\', '\\'],
-  ['\\{{', '{{'],
-]
+module.exports = {
+  ESCAPED,
+  tokenize
+}
 
 const TOKENS = [
   { re: /^\s+/, type: 'whitespace' },
@@ -41,14 +38,22 @@ const TOKENS = [
   { re: /^undefined/, type: 'undefined' },
   { re: /^null/, type: 'null' },
   { re: /^[^\\]+?(?={{|"|\\)/, type: 'string' },
-  { re: new RegExp(`^(?:${ESCAPED.map(x => `\\${x[0]}`).join('|')})`), type: 'escaped' }
+  {
+    re: new RegExp(`^(?:${Object
+      .keys(ESCAPED)
+      .map(x => x.replace(/\\/g, '\\\\'))
+      .join('|')})`),
+    type: 'escaped'
+  }
 ]
 
 function tokenize (source) {
+  let i = 0
+  const err = getErrorFormatter(source, () => i)
   const NC = source.length
   const NT = TOKENS.length
   const result = []
-  for (let i = 0; i !== NC;) {
+  for (; i !== NC;) {
     const s = source.slice(i)
     let m = null
     let ti = 0
@@ -59,7 +64,7 @@ function tokenize (source) {
       }
     }
     if (!m) {
-      throw new Error(`Illegal character ${source[i]} at col ${i}`)
+      throw new Error(err('Invalid token'))
     }
     const ni = i + m[0].length
     const type = TOKENS[ti].type

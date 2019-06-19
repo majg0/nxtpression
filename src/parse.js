@@ -1,24 +1,21 @@
+const { ESCAPED } = require('./tokenize')
+const { getErrorFormatter } = require('./util')
+
 module.exports = {
   parse
 }
 
 function parse (source, tokenTable) {
-  function err (text, start) {
-    if (start === undefined) {
-      start = tokenTable[0].start
-    }
-    const AROUND = 38
-    throw new Error(`At ${start}; ${text} \n\`${
-      source.slice(Math.max(0, start - AROUND), start + AROUND).replace(/\n/g, ' ')
-    }\`\n${' '.repeat(Math.min(start, AROUND) + 1) + '^'}`)
-  }
+  const err = getErrorFormatter(
+    source, () => tokenTable.length === 0 ? source.length : tokenTable[0].start
+  )
 
   function consume (expectedType) {
     const token = tokenTable.shift()
     if (!expectedType || token.type === expectedType) {
       return token
     }
-    err(`Expected ${expectedType} but got ${token.type}`, token.start)
+    throw new Error(err(`Expected ${expectedType} but got ${token.type}`, token.start))
   }
 
   function peek () {
@@ -26,7 +23,7 @@ function parse (source, tokenTable) {
   }
 
   function parseArgsList () {
-    consume('oround')
+    const oround = consume('oround')
     const body = []
     while (tokenTable.length) {
       const at = peek()
@@ -43,7 +40,7 @@ function parse (source, tokenTable) {
 
       body.push(parseExpr())
     }
-    err('Unexpected template termination')
+    throw new Error(err('Argument list not closed', oround.start))
   }
 
   function parseFunc (path) {
@@ -56,10 +53,15 @@ function parse (source, tokenTable) {
   }
 
   function parseObject () {
-    consume('ocurly')
+    const ocurly = consume('ocurly')
     const props = []
     while (tokenTable.length) {
       const at = peek()
+
+      if (at === 'whitespace') {
+        consume()
+        continue
+      }
 
       if (at === 'identifier') {
         const ident = consume().body
@@ -79,11 +81,11 @@ function parse (source, tokenTable) {
       }
 
       if (at === 'dquote') {
-        err('dquote prop')
+        throw new Error(err('dquote prop'))
       }
 
       if (at === 'squote') {
-        err('squote prop')
+        throw new Error(err('squote prop'))
       }
 
       if (at === 'osquare') {
@@ -110,17 +112,18 @@ function parse (source, tokenTable) {
         return { type: 'object', props }
       }
 
-      err('Unexpected token')
+      throw new Error(err(`Unexpected token ${at}`))
     }
-    err('Unexpected template termination')
+    throw new Error(err('Object not closed', ocurly.start))
   }
 
   function parseQuote (quoteType) {
-    consume(`${quoteType}quote`)
+    const xquote = consume(`${quoteType}quote`)
     const parts = []
     let str = ''
     while (tokenTable.length) {
       const at = peek()
+
       if (at === 'otemplate') {
         if (str) {
           parts.push({ type: 'string', body: str })
@@ -129,6 +132,7 @@ function parse (source, tokenTable) {
         parts.push(parseTemplate())
         continue
       }
+
       if (at === `${quoteType}quote`) {
         consume()
         if (str) {
@@ -136,9 +140,16 @@ function parse (source, tokenTable) {
         }
         return { type: 'stringparts', parts }
       }
-      str += consume().body
+
+      const token = consume()
+      if (token.type === 'escaped') {
+        console.log(token.body, ESCAPED[token.body])
+        str += ESCAPED[token.body]
+      } else {
+        str += token.body
+      }
     }
-    err('Unexpected template termination')
+    throw new Error(err('String not closed', xquote.start))
   }
 
   function parseIndexDeref (node) {
@@ -174,24 +185,15 @@ function parse (source, tokenTable) {
   }
 
   function parseMemberAccess (node) {
-    consume('member')
-    while (tokenTable.length) {
-      const at = peek()
-      if (at === 'whitespace') {
-        consume()
-        continue
-      }
-      if (at !== 'identifier') {
-        err('Expected identifier')
-      }
-      const identifier = consume()
-      return { type: 'member', node, property: identifier.body }
+    const member = consume('member')
+    if (peek() === 'whitespace') {
+      consume()
     }
-    err('Unexpected template termination')
+    return { type: 'member', node, property: consume('identifier').body }
   }
 
   function parseArray () {
-    consume('osquare')
+    const osquare = consume('osquare')
     const items = []
     while (tokenTable.length) {
       const at = peek()
@@ -208,7 +210,7 @@ function parse (source, tokenTable) {
 
       items.push(parseExpr())
     }
-    err('Unexpected template termination')
+    throw new Error(err('Array not terminated', osquare.start))
   }
 
   function parseNumber () {
@@ -244,7 +246,7 @@ function parse (source, tokenTable) {
 
       if (at === 'ccurly' || at === 'cround' || at === 'csquare' || at === 'comma' || at === 'ctemplate') {
         if (!prev) {
-          err('expected expression')
+          throw new Error(err('expected expression'))
         }
         return prev
       }
@@ -289,7 +291,7 @@ function parse (source, tokenTable) {
 
       if (at === 'member') {
         if (!prev) {
-          err('Expected expression')
+          throw new Error(err('Expected expression'))
         }
         prev = parseMemberAccess(prev)
         continue
@@ -327,9 +329,11 @@ function parse (source, tokenTable) {
         continue
       }
 
-      err('Unexpected token')
+      if (at === 'otemplate') {
+        throw new Error(err('Can only open templates inside strings'))
+      }
     }
-    err('Unexpected template termination')
+    throw new Error(err('Expression not terminated'))
   }
 
   function parseTemplate () {
