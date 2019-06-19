@@ -1,5 +1,5 @@
 module.exports = {
-  compile
+  compileFunctions
 }
 
 function compileString ({ body }) {
@@ -245,7 +245,7 @@ function compileExpr (node) {
   throw new Error(`Unexpected type ${node.type}`)
 }
 
-function compile ({ type, body }) {
+function compileFunctions ({ type, body }) {
   if (body.length === 1) {
     return compileExpr(body[0])
   }

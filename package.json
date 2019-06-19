@@ -16,6 +16,7 @@
   },
   "homepage": "https://github.com/martingronlund/nxtpression#readme",
   "devDependencies": {
-    "jest": "^24.8.0"
+    "jest": "^24.8.0",
+    "rxjs": "^6.5.2"
   }
 }

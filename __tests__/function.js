@@ -1,9 +1,9 @@
-const { tokenize, parse, compile } = require('../src')
+const { tokenize, parse, compileFunctions } = require('../src')
 
 function run (source, context) {
   const tokenTable = tokenize(source)
   const tree = parse(source, tokenTable)
-  const factory = compile(tree)
+  const factory = compileFunctions(tree)
   const evaluate = factory(context)
   return evaluate()
 }

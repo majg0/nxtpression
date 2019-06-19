@@ -1,9 +1,10 @@
 const { tokenize } = require('./tokenize')
 const { parse } = require('./parse')
-const { compile } = require('./compile')
+const { compileFunctions, compileObservables } = require('./compiler')
 
 module.exports = {
   tokenize,
   parse,
-  compile
+  compileFunctions,
+  compileObservables
 }
