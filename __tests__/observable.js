@@ -21,8 +21,15 @@ function run (source, context) {
 // })
 
 test('ref', complete => {
-  const c = { a: 1 }
+  const c = {
+    a: 1,
+    b: of(1)
+  }
   run('{{ a }}', c).subscribe({
+    next: x => expect(x).toBe(1),
+    complete
+  })
+  run('{{ b }}', c).subscribe({
     next: x => expect(x).toBe(1),
     complete
   })
@@ -30,7 +37,7 @@ test('ref', complete => {
 
 test('pipe', complete => {
   const c = { mul: y => x => x * y }
-  run('{{ 2 | mul(y) }}', c).subscribe({
+  run('{{ 2 | mul(3) }}', c).subscribe({
     next: x => expect(x).toBe(4),
     complete
   })

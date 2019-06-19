@@ -17,11 +17,15 @@ function compileRef ({ name }) {
       throw new Error(`Undefined variable ${name}`)
     }
 
+    if (typeof value === 'function') {
+      return value
+    }
+
     if (isObservable(value)) {
       return value
-    } else {
-      return of(value)
     }
+
+    return of(value)
   }
 }
 
