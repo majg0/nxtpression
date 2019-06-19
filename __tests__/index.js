@@ -1,4 +1,4 @@
-const { tokenize, parse, compile } = require('../index')
+const { tokenize, parse, compile } = require('../src')
 
 function run (source, context) {
   const tokenTable = tokenize(source)

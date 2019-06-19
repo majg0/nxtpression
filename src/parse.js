@@ -143,7 +143,6 @@ function parse (source, tokenTable) {
 
       const token = consume()
       if (token.type === 'escaped') {
-        console.log(token.body, ESCAPED[token.body])
         str += ESCAPED[token.body]
       } else {
         str += token.body
