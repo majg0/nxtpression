@@ -1,23 +1,27 @@
-const { of } = require('rxjs')
+const { of, isObservable } = require('rxjs')
 
 module.exports = {
   compileObservables
 }
 
 function compileString ({ body }) {
-  return context => () => body
+  return context => of(body)
 }
 
 function compileRef ({ name }) {
   return context => {
     const value = context[name]
-    throw new Error('compileRef')
-    // if (value === undefined) {
-    //   throw new Error(`Undefined variable ${name}`)
-    // }
-    // return () => {
-    //   return value
-    // }
+
+    if (value === undefined) {
+      // TODO augment message with source info
+      throw new Error(`Undefined variable ${name}`)
+    }
+
+    if (isObservable(value)) {
+      return value
+    } else {
+      return of(value)
+    }
   }
 }
 
