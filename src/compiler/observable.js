@@ -1,4 +1,5 @@
-const { of, isObservable } = require('rxjs')
+const { combineLatest, isObservable, of } = require('rxjs')
+const { map, switchMap } = require('rxjs/operators')
 
 module.exports = {
   compileObservables
@@ -15,10 +16,6 @@ function compileRef ({ name }) {
     if (value === undefined) {
       // TODO augment message with source info
       throw new Error(`Undefined variable ${name}`)
-    }
-
-    if (typeof value === 'function') {
-      return value
     }
 
     if (isObservable(value)) {
@@ -52,24 +49,50 @@ function compileFunc ({ path, args }) {
   const p = compileExpr(path)
   const as = args.map(compileExpr)
   return context => {
-    const getFunc = p(context)
-    const argGetters = as.map(a => a(context))
-    throw new Error('compileFunc')
-    // const func = getFunc()
-    // const hardArgs = argGetters.map(getArg => getArg())
-    // const partial = func(...hardArgs)
-    // // console.log('setup', func.name, 'with', hardArgs, 'taking', partial.length, 'more')
-    // return (...args) => {
-    //   if (args.length === 0) {
-    //     if (partial.length === 0) {
-    //       // console.log('applying', func.name)
-    //       return partial()
-    //     }
-    //     return partial
-    //   }
-    //   // console.log('applying', func.name, 'on', args, 'with', hardArgs)
-    //   return partial(...args)
-    // }
+    const func$ = p(context)
+    const arg$s = as.map(a => a(context))
+    return combineLatest(
+      func$,
+      combineLatest(arg$s)
+    ).pipe(
+      switchMap(([func, args]) => {
+        const result = func(...args)
+        if (isObservable(result)) {
+          return result
+        }
+        return of(result)
+      })
+    )
+    // return combineLatest(arg$s)
+    // return combineLatest(
+    //   // func$,
+    //   ...arg$s
+    // ).pipe(switchMap, (x) => {
+    //   console.log(x)
+    //   return x
+    //   // console.log(func)
+    //   // console.log(args)
+    //   // return func(...args)
+    //   // console.log(func(...args))
+    //   // func(...args)
+    // })
+
+    // throw new Error('compileFunc')
+    // // const func = getFunc()
+    // // const hardArgs = argGetters.map(getArg => getArg())
+    // // const partial = func(...hardArgs)
+    // // // console.log('setup', func.name, 'with', hardArgs, 'taking', partial.length, 'more')
+    // // return (...args) => {
+    // //   if (args.length === 0) {
+    // //     if (partial.length === 0) {
+    // //       // console.log('applying', func.name)
+    // //       return partial()
+    // //     }
+    // //     return partial
+    // //   }
+    // //   // console.log('applying', func.name, 'on', args, 'with', hardArgs)
+    // //   return partial(...args)
+    // // }
   }
 }
 
