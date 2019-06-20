@@ -1,5 +1,7 @@
-const { combineLatest, isObservable, of } = require('rxjs')
-const { map, switchMap } = require('rxjs/operators')
+const { Observable, combineLatest, isObservable, of } = require('rxjs')
+const { map, switchMap, withLatestFrom } = require('rxjs/operators')
+const { tap } = require('rxjs/operators')
+const op = require('rxjs/operators')
 
 module.exports = {
   compileObservables
@@ -26,22 +28,82 @@ function compileRef ({ name }) {
   }
 }
 
+let i = 0
+let j = 0
+
 function compilePipe ({ left, right }) {
   const l = compileExpr(left)
   const r = compileExpr(right)
   return context => {
-    const lc = l(context)
-    const rc = r(context)
-    throw new Error('compilePipe')
-    // if (typeof rc() !== 'function') {
-    //   throw new Error('must pipe to function')
-    // }
-    // return x => {
-    //   if (left.type === 'func' && !x) {
-    //     return (...args) => rc(lc(...args))
-    //   }
-    //   return rc(lc(x))
-    // }
+    // console.log(++j, 'pipe', left.type, 'to', right.type)
+    const l$ = l(context)
+    const r$ = r(context)
+    // unpack r's OP -> pipe l's x through OP to produce y
+    return r$.pipe(
+      switchMap(func => {
+        // console.log(++i, 'eval', left.type, 'to', right.type)
+        if (func.prototype) {
+          // assume rxjs operator
+          // console.log('piping', func, 'typeof', typeof func)
+          return l$.pipe(
+            // source => new Observable(o => {
+            //   return source.subscribe(
+            //     x => {
+            //       console.log('got', x, 'in map func, where func is', func)
+            //       if (typeof x === 'function') {
+            //         return o.next(value => {
+            //           console.log('got', value, 'in inner map func, where func is', func)
+            //           return func(x(value))
+            //         })
+            //       }
+            //       // func(x)
+            //       // console.log(x)
+            //       return o.next(func(x))
+            //     },
+            //     err => o.error(err),
+            //     () => o.complete(),
+            //   )
+            // }),
+            //   console.log('myop', x, source)
+            //   return 
+            // },
+            // switchMap(x => {
+            //   if (typeof x === 'function') {
+            //     return value => func(x(value))
+            //     return l$
+            //   }
+            //   return func(x)
+            // })
+
+            // tap(x =>
+            //   console.log('applying', func, 'typeof', typeof func, 'to', x, 'typeof', typeof x)
+            // ),
+            func,
+            // tap(x =>
+            //   console.log('producing', x, typeof x)
+            // )
+          )
+        }
+        // cases:
+        // THROW value | value
+        // value | rxop
+        // value | func
+        // func | func
+        // func | rxop
+        // THROW func | value
+        // rxop | rxop
+        // rxop | func
+        // THROW rxop | value
+
+        return l$.pipe(map(x => {
+          // console.log('applying', func, 'typeof', typeof func, 'to', x, 'typeof', typeof x, 'producing', func(x), typeof func(x))
+          if (typeof x === 'function') {
+            return value => func(x(value))
+          }
+          return func(x)
+        }))
+      })
+    )
   }
 }
 
@@ -51,6 +113,8 @@ function compileFunc ({ path, args }) {
   return context => {
     const func$ = p(context)
     const arg$s = as.map(a => a(context))
+    // case 1. unpack func and args -> apply args to func to produce SOURCE -> return SOURCE
+    // case 2. unpack func and args -> apply args to func to produce OP -> return OP in observable
     return combineLatest(
       func$,
       combineLatest(arg$s)
@@ -63,36 +127,19 @@ function compileFunc ({ path, args }) {
         return of(result)
       })
     )
-    // return combineLatest(arg$s)
     // return combineLatest(
-    //   // func$,
-    //   ...arg$s
-    // ).pipe(switchMap, (x) => {
-    //   console.log(x)
-    //   return x
-    //   // console.log(func)
-    //   // console.log(args)
-    //   // return func(...args)
-    //   // console.log(func(...args))
-    //   // func(...args)
-    // })
-
-    // throw new Error('compileFunc')
-    // // const func = getFunc()
-    // // const hardArgs = argGetters.map(getArg => getArg())
-    // // const partial = func(...hardArgs)
-    // // // console.log('setup', func.name, 'with', hardArgs, 'taking', partial.length, 'more')
-    // // return (...args) => {
-    // //   if (args.length === 0) {
-    // //     if (partial.length === 0) {
-    // //       // console.log('applying', func.name)
-    // //       return partial()
-    // //     }
-    // //     return partial
-    // //   }
-    // //   // console.log('applying', func.name, 'on', args, 'with', hardArgs)
-    // //   return partial(...args)
-    // // }
+    //   func$,
+    //   combineLatest(arg$s)
+    // ).pipe(
+    //   switchMap(([func, args]) => {
+    //     const result = func(...args)
+    //     if (isObservable(result)) {
+    //       return result
+    //     }
+    //     // plain function case
+    //     return of(result)
+    //   })
+    // )
   }
 }
 

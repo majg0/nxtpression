@@ -1,5 +1,5 @@
 const { Observable, of, timer } = require('rxjs')
-const { switchMap, exhaustMap, take } = require('rxjs/operators')
+const { switchMap, exhaustMap, take, tap } = require('rxjs/operators')
 const { tokenize, parse, compileObservables } = require('../src')
 
 function run (source, context) {
@@ -30,7 +30,7 @@ async function runAsync (source, context, tests) {
     async function onComplete () {
       if (i === tests.length) {
         // now await the tests
-        Promise
+        await Promise
           .all(tests)
           .then(resolve)
           .catch(reject)
@@ -43,16 +43,23 @@ async function runAsync (source, context, tests) {
   })
 }
 
+const num = 5
+const sub = y => x => x - y
+const div = y => x => x / y
+const mul = y => x => x * y
+const mul2 = (x, y) => x * y
+const add = y => x => x + y
+const map = f => x => x.map(f)
+const expectToBe = (f, length=num) => Array.from({ length }, (_, i) =>
+  x => expect(x).toBe(f(i))
+)
+
 describe('func', () => {
-  it('handles observables', async () => {
-    await runAsync('{{ of(1, 2) }}', { of }, [
-      x => expect(x).toBe(1),
-      x => expect(x).toBe(2)
-    ])
+  it('handles returned observables synchronously', async () => {
+    await runAsync('{{ of(1, 2) }}', { of }, expectToBe(i => i + 1, 2))
   })
 
-  it('handles observables asynchronously', async () => {
-    const num = 5
+  it('handles returned observables asynchronously', async () => {
     await runAsync(
       '{{ seq(period, num) }}',
       {
@@ -60,45 +67,95 @@ describe('func', () => {
         num,
         seq: (period, num) => timer(0, period).pipe(take(num))
       },
-      Array.from({ length: num }, (_, i) =>
-        x => expect(x).toBe(i)
-      )
+      expectToBe(i => i)
     )
   })
 
-  it('handles plain functions', async () => {
-    await runAsync('{{ mul(2, 3) }}', { mul: (x, y) => x * y },
-      x => expect(x).toBe(6)
-    )
+  it('handles returned values', async () => {
+    await runAsync('{{ mul2(2, 3) }}', { mul2 }, x => expect(x).toBe(6))
   })
 
-  it('handles higher order functions', async () => {
-    await runAsync('{{ div(2) }}', { div: y => x => x / y },
-      f => expect(f(6)).toBe(3) // TODO should f be observable<function>?
-    )
+  it('handles returned functions', async () => {
+    await runAsync('{{ div(2) }}', { div }, f => expect(f(6)).toBe(3))
+  })
+
+  it('handles calling of returned functions', async () => {
+    await runAsync('{{ mul(2)(3) }}', { mul }, x => expect(x).toBe(6))
   })
 })
 
 describe('ref', () => {
-  it('handles plain refs', async () =>
-    runAsync('{{ a }}', { a: 1 }, x => expect(x).toBe(1))
-  )
+  it('handles number refs', async () => {
+    await runAsync('{{ a }}', { a: 1 }, x => expect(x).toBe(1))
+  })
 
-  it('handles observable refs', async () =>
-    runAsync('{{ a }}', { a: of(2) }, x => expect(x).toBe(2))
-  )
+  it('handles observable refs', async () => {
+    await runAsync('{{ a }}', { a: of(2) }, x => expect(x).toBe(2))
+  })
 })
 
-// test('pipe', complete => {
-//   const c = { mul: y => x => x * y }
-//   run('{{ 2 | mul(3) }}', c).subscribe({
-//     next: x => expect(x).toBe(4),
-//     complete
-//   })
-// })
+describe('pipe', () => {
+  it('handles piping to rxjs operators', async () => {
+    await runAsync(
+      '{{ timer(0, 50) | take(num) }}',
+      { num, timer, take },
+      expectToBe(i => i)
+    )
+  })
 
-test('number', () => {
-  runAsync('{{ 1 }}', {}, x => expect(x).toBe(1))
+  it('detects non-operator function returns and handles them as maps', async () => {
+    await runAsync(
+      '{{ 2 | mul(3) }}',
+      { mul },
+      x => expect(x).toBe(6),
+    )
+  })
+
+  it('handles pipes as args', async () => {
+    await runAsync(
+      '{{ x | map(mul(2) | add(1)) }}',
+      { x: [1, 2], map, mul, add },
+      x => expect(x).toEqual([1 * 2 + 1, 2 * 2 + 1])
+    )
+  })
+
+  it('handles pipes from functions to functions', async () => {
+    await runAsync(
+      '{{ stream | sub(5) | mul(2) | add(1) }}',
+      { sub, mul, add, stream: timer(0, 50).pipe(take(num)) },
+      expectToBe(i => (i - 5) * 2 + 1)
+    )
+  })
+
+  // TODO test: could one pipe a stream like so: {{ stream.pipe(map(add(1)), take(2)) }} ?
+
+  it('handles piping from rxjs operators to functions', async () => {
+    await runAsync(
+      '{{ timer(0, 50) | take(num) | add(1) }}',
+      { num, add, timer, take },
+      expectToBe(i => i + 1)
+    )
+  })
+
+  it('handles piping from functions to rxjs operators', async () => {
+    await runAsync(
+      '{{ timer(0, 50) | add(1) | take(num) }}',
+      { num, add, timer, take },
+      expectToBe(i => i + 1)
+    )
+  })
+
+  it('handles piping from rxjs operators to rxjs operators', async () => {
+    await runAsync(
+      '{{ timer(0, 50) | take(num) | take(num) }}',
+      { num, add, timer, take },
+      expectToBe(i => i)
+    )
+  })
+})
+
+test('number', async () => {
+  await runAsync('{{ 1 }}', {}, x => expect(x).toBe(1))
 })
 
 // test('string', complete => {
