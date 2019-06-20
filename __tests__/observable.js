@@ -18,13 +18,20 @@ async function runAsync (source, context, tests) {
   return new Promise((resolve, reject) => {
     let i = 0
 
+    const sub = run(source, context).subscribe(onNext, onError, onComplete)
+
     function onNext (x) {
       const f = tests[i]
       if (f === undefined) {
-        throw new Error('too many emissions')
+        return onError('too many emissions')
       }
       tests[i] = f(x) // if test is async, save for later
       ++i
+    }
+
+    function onError (err) {
+      sub.unsubscribe()
+      reject(err)
     }
 
     async function onComplete () {
@@ -33,13 +40,11 @@ async function runAsync (source, context, tests) {
         await Promise
           .all(tests)
           .then(resolve)
-          .catch(reject)
+          .catch(onError)
       } else {
-        reject('too few emissions')
+        onError('too few emissions')
       }
     }
-
-    run(source, context).subscribe(onNext, reject, onComplete)
   })
 }
 
