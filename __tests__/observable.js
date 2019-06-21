@@ -163,6 +163,10 @@ test('number', async () => {
   await runAsync('{{ 1 }}', {}, x => expect(x).toBe(1))
 })
 
+test('member', async () => {
+  await runAsync('{{ foo.bar }}', { foo: { bar: 5 } }, x => expect(x).toBe(5))
+})
+
 // test('string', complete => {
 //   run('{{ "a" }}', {}).subscribe({
 //     next: x => expect(x).toBe("a"),

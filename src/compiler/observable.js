@@ -65,7 +65,7 @@ function compilePipe ({ left, right }) {
             //   )
             // }),
             //   console.log('myop', x, source)
-            //   return 
+            //   return
             // },
             // switchMap(x => {
             //   if (typeof x === 'function') {
@@ -147,12 +147,12 @@ function compileMember ({ node, property }) {
   const n = compileExpr(node)
   return context => {
     const nc = n(context)
-    throw new Error('compileMember')
-    // const obj = nc()
-    // if (!Object.hasOwnProperty.call(obj, property)) {
-    //   throw new Error(`Undefined property ${property} in object ${JSON.stringify(obj)}`)
-    // }
-    // return () => obj[property]
+    return nc.pipe(map(obj => {
+      if (!Object.hasOwnProperty.call(obj, property)) {
+        throw new Error(`Undefined property ${property} in object ${JSON.stringify(obj)}`)
+      }
+      return obj[property]
+    }))
   }
 }
 
@@ -290,7 +290,7 @@ function compileSub ({ left, right }) {
   return context => {
     const lc = l(context)
     const rc = r(context)
-    
+
     throw new Error('compileSub')
     // return () => lc() - rc()
   }
