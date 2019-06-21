@@ -57,8 +57,6 @@ function compileFunc ({ path, args }) {
   return context => {
     const func$ = p(context)
     const arg$s = as.map(a => a(context))
-    // case 1. unpack func and args -> apply args to func to produce SOURCE -> return SOURCE
-    // case 2. unpack func and args -> apply args to func to produce OP -> return OP in observable
     return combineLatest(
       func$,
       combineLatest(arg$s)
@@ -71,19 +69,6 @@ function compileFunc ({ path, args }) {
         return of(result)
       })
     )
-    // return combineLatest(
-    //   func$,
-    //   combineLatest(arg$s)
-    // ).pipe(
-    //   switchMap(([func, args]) => {
-    //     const result = func(...args)
-    //     if (isObservable(result)) {
-    //       return result
-    //     }
-    //     // plain function case
-    //     return of(result)
-    //   })
-    // )
   }
 }
 
@@ -163,8 +148,7 @@ function compileIndex ({ node, expr }) {
   return context => {
     const nc = n(context)
     const ec = e(context)
-    // return () => nc()[ec()]
-    throw new Error('compileIndex')
+    return combineLatest(nc, ec, (n, e) => n[e])
   }
 }
 
@@ -172,11 +156,7 @@ function compileArray ({ items }) {
   const i = items.map(compileExpr)
   return context => {
     const ic = i.map(i => i(context))
-    // return () => ic.reduce((o, x) => [
-    //   ...o,
-    //   x()
-    // ], [])
-    throw new Error('compileArray')
+    return combineLatest(ic)
   }
 }
 
