@@ -218,7 +218,11 @@ function parse (source, tokenTable) {
 
   function parsePipe (left) {
     consume('pipe')
-    return { type: 'pipe', left, right: parseExpr() }
+    const right = parseExpr()
+    if (right.type === 'pipe') {
+      return { type: 'pipe', parts: [left, ...right.parts] }
+    }
+    return { type: 'pipe', parts: [left, right] }
   }
 
   function parseExprGroup () {

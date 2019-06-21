@@ -31,21 +31,42 @@ function compileRef ({ name }) {
 let i = 0
 let j = 0
 
-function compilePipe ({ left, right }) {
-  const l = compileExpr(left)
-  const r = compileExpr(right)
+function compilePipe ({ parts }) {
+  const p = parts.map(compileExpr)
   return context => {
-    const l$ = l(context)
-    const r$ = r(context)
-    return r$.pipe(
-      switchMap(func => {
-        // TODO: support for rxjs operators?
-        return l$.pipe(map(x => {
-          if (typeof x === 'function') {
-            return value => func(x(value))
+    const p$s = p.map(x => x(context))
+    // TODO: can't use combineLatest - if they complete, all ends...
+    return combineLatest(p$s).pipe(
+      switchMap(([value, ...transforms]) => {
+        console.log('start transforming', value, 'with', transforms)
+        function reduce (value, index) {
+          console.log('red', value, index)
+          while (index < transforms.length) {
+            const transform = transforms[index++]
+
+            console.log('transforming with', transform)
+
+            if (typeof value === 'function') {
+              const func = value
+              value = x => transform(func(x))
+            } else {
+              value = transform(value)
+            }
+
+            console.log('produced', value)
+
+            if (isObservable(value)) {
+              console.log('switching to...', index)
+              return value.pipe(
+                switchMap(value => reduce(value, index))
+              )
+            }
           }
-          return func(x)
-        }))
+
+          return of(value)
+        }
+
+        return reduce(value, 0)
       })
     )
   }

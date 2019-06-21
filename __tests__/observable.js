@@ -168,17 +168,17 @@ describe('pipe', () => {
     )
   })
 
-  // it('handles creating observables mid-pipe', async () => {
-  //   await runAsync(
-  //     '{{ num | countTo() | double() }}',
-  //     {
-  //       num,
-  //       countTo: () => length => of(...Array.from({ length }, (_, i) => i)),
-  //       double: () => x => x * 2
-  //     },
-  //     expectToBe(i => i * 2)
-  //   )
-  // })
+  it('handles creating observables mid-pipe', async () => {
+    await runAsync(
+      '{{ num | countTo() | double() }}',
+      {
+        num,
+        countTo: () => num => timer(0, 50).pipe(take(num)),
+        double: () => x => x * 2
+      },
+      expectToBe(i => i * 2)
+    )
+  })
 
   // TODO test: could one pipe a stream like so: {{ stream.pipe(map(add(1)), take(2)) }} ?
 
