@@ -35,68 +35,12 @@ function compilePipe ({ left, right }) {
   const l = compileExpr(left)
   const r = compileExpr(right)
   return context => {
-    // console.log(++j, 'pipe', left.type, 'to', right.type)
     const l$ = l(context)
     const r$ = r(context)
-    // unpack r's OP -> pipe l's x through OP to produce y
     return r$.pipe(
       switchMap(func => {
-        // console.log(++i, 'eval', left.type, 'to', right.type)
-        if (func.prototype) {
-          // assume rxjs operator
-          // console.log('piping', func, 'typeof', typeof func)
-          return l$.pipe(
-            // source => new Observable(o => {
-            //   return source.subscribe(
-            //     x => {
-            //       console.log('got', x, 'in map func, where func is', func)
-            //       if (typeof x === 'function') {
-            //         return o.next(value => {
-            //           console.log('got', value, 'in inner map func, where func is', func)
-            //           return func(x(value))
-            //         })
-            //       }
-            //       // func(x)
-            //       // console.log(x)
-            //       return o.next(func(x))
-            //     },
-            //     err => o.error(err),
-            //     () => o.complete(),
-            //   )
-            // }),
-            //   console.log('myop', x, source)
-            //   return
-            // },
-            // switchMap(x => {
-            //   if (typeof x === 'function') {
-            //     return value => func(x(value))
-            //     return l$
-            //   }
-            //   return func(x)
-            // })
-
-            // tap(x =>
-            //   console.log('applying', func, 'typeof', typeof func, 'to', x, 'typeof', typeof x)
-            // ),
-            func,
-            // tap(x =>
-            //   console.log('producing', x, typeof x)
-            // )
-          )
-        }
-        // cases:
-        // THROW value | value
-        // value | rxop
-        // value | func
-        // func | func
-        // func | rxop
-        // THROW func | value
-        // rxop | rxop
-        // rxop | func
-        // THROW rxop | value
-
+        // TODO: support for rxjs operators?
         return l$.pipe(map(x => {
-          // console.log('applying', func, 'typeof', typeof func, 'to', x, 'typeof', typeof x, 'producing', func(x), typeof func(x))
           if (typeof x === 'function') {
             return value => func(x(value))
           }

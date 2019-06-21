@@ -92,25 +92,15 @@ describe('func', () => {
   })
 })
 
-describe('ref', () => {
-  it('handles number refs', async () => {
-    await runAsync('{{ a }}', { a: 1 }, x => expect(x).toBe(1))
-  })
+test('member', async () => {
+  await runAsync('{{ foo.bar }}', { foo: { bar: 5 } }, x => expect(x).toBe(5))
+})
 
-  it('handles observable refs', async () => {
-    await runAsync('{{ a }}', { a: of(2) }, x => expect(x).toBe(2))
-  })
+test('number', async () => {
+  await runAsync('{{ 1 }}', {}, x => expect(x).toBe(1))
 })
 
 describe('pipe', () => {
-  it('handles piping to rxjs operators', async () => {
-    await runAsync(
-      '{{ timer(0, 50) | take(num) }}',
-      { num, timer, take },
-      expectToBe(i => i)
-    )
-  })
-
   it('detects non-operator function returns and handles them as maps', async () => {
     await runAsync(
       '{{ 2 | mul(3) }}',
@@ -137,37 +127,48 @@ describe('pipe', () => {
 
   // TODO test: could one pipe a stream like so: {{ stream.pipe(map(add(1)), take(2)) }} ?
 
-  it('handles piping from rxjs operators to functions', async () => {
-    await runAsync(
-      '{{ timer(0, 50) | take(num) | add(1) }}',
-      { num, add, timer, take },
-      expectToBe(i => i + 1)
-    )
-  })
-
-  it('handles piping from functions to rxjs operators', async () => {
-    await runAsync(
-      '{{ timer(0, 50) | add(1) | take(num) }}',
-      { num, add, timer, take },
-      expectToBe(i => i + 1)
-    )
-  })
-
-  it('handles piping from rxjs operators to rxjs operators', async () => {
-    await runAsync(
-      '{{ timer(0, 50) | take(num) | take(num) }}',
-      { num, add, timer, take },
-      expectToBe(i => i)
-    )
-  })
+  // TODO support for rxjs operators
+  // it('handles piping to rxjs operators', async () => {
+  //   await runAsync(
+  //     '{{ timer(0, 50) | take(num) }}',
+  //     { num, timer, take },
+  //     expectToBe(i => i)
+  //   )
+  // })
+  //
+  // it('handles piping from rxjs operators to functions', async () => {
+  //   await runAsync(
+  //     '{{ timer(0, 50) | take(num) | add(1) }}',
+  //     { num, add, timer, take },
+  //     expectToBe(i => i + 1)
+  //   )
+  // })
+  //
+  // it('handles piping from functions to rxjs operators', async () => {
+  //   await runAsync(
+  //     '{{ timer(0, 50) | add(1) | take(num) }}',
+  //     { num, add, timer, take },
+  //     expectToBe(i => i + 1)
+  //   )
+  // })
+  //
+  // it('handles piping from rxjs operators to rxjs operators', async () => {
+  //   await runAsync(
+  //     '{{ timer(0, 50) | take(num) | take(num) }}',
+  //     { num, add, timer, take },
+  //     expectToBe(i => i)
+  //   )
+  // })
 })
 
-test('number', async () => {
-  await runAsync('{{ 1 }}', {}, x => expect(x).toBe(1))
-})
+describe('ref', () => {
+  it('handles number refs', async () => {
+    await runAsync('{{ a }}', { a: 1 }, x => expect(x).toBe(1))
+  })
 
-test('member', async () => {
-  await runAsync('{{ foo.bar }}', { foo: { bar: 5 } }, x => expect(x).toBe(5))
+  it('handles observable refs', async () => {
+    await runAsync('{{ a }}', { a: of(2) }, x => expect(x).toBe(2))
+  })
 })
 
 // test('string', complete => {
