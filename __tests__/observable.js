@@ -18,7 +18,7 @@ async function runAsync (source, context, tests) {
   return new Promise((resolve, reject) => {
     let i = 0
 
-    const sub = run(source, context).subscribe(onNext, onError, onComplete)
+    let subscription = run(source, context).subscribe(onNext, onError, onComplete)
 
     function onNext (x) {
       const f = tests[i]
@@ -30,8 +30,11 @@ async function runAsync (source, context, tests) {
     }
 
     function onError (err) {
-      sub.unsubscribe()
-      reject(err)
+      if (subscription && subscription.unsubscribe) {
+        subscription.unsubscribe()
+        subscription = null
+      }
+      reject(new Error(err))
     }
 
     async function onComplete () {
