@@ -185,59 +185,33 @@ function compileNumber (node) {
   return context => of(node.value)
 }
 
-function compileDiv ({ left, right }) {
-  const l = compileExpr(left)
-  const r = compileExpr(right)
-  return context => {
-    const lc = l(context)
-    const rc = r(context)
-    // return () => lc() / rc()
-    throw new Error('compileDiv')
-  }
+function compileDiv (node) {
+  return compileArithmeticExpr(node, (l, r) => l / r)
 }
 
-function compileMul ({ left, right }) {
-  const l = compileExpr(left)
-  const r = compileExpr(right)
-  return context => {
-    const lc = l(context)
-    const rc = r(context)
-    // return () => lc() * rc()
-    throw new Error('compileMul')
-  }
+function compileMul (node) {
+  return compileArithmeticExpr(node, (l, r) => l * r)
 }
 
-function compilePow ({ left, right }) {
-  const l = compileExpr(left)
-  const r = compileExpr(right)
-  return context => {
-    const lc = l(context)
-    const rc = r(context)
-    // return () => lc() ** rc()
-    throw new Error('compilePow')
-  }
+function compilePow (node) {
+  return compileArithmeticExpr(node, (l, r) => l ** r)
 }
 
-function compileAdd ({ left, right }) {
-  const l = compileExpr(left)
-  const r = compileExpr(right)
-  return context => {
-    const lc = l(context)
-    const rc = r(context)
-    // return () => lc() + rc()
-    throw new Error('compileAdd')
-  }
+function compileAdd (node) {
+  return compileArithmeticExpr(node, (l, r) => l + r)
 }
 
-function compileSub ({ left, right }) {
+function compileSub (node) {
+  return compileArithmeticExpr(node, (l, r) => l - r)
+}
+
+function compileArithmeticExpr ({ left, right }, fn) {
   const l = compileExpr(left)
   const r = compileExpr(right)
   return context => {
     const lc = l(context)
     const rc = r(context)
-
-    throw new Error('compileSub')
-    // return () => lc() - rc()
+    return combineLatest(lc, rc).pipe(map(([l, r]) => fn(l, r)))
   }
 }
 
