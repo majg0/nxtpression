@@ -226,9 +226,9 @@ describe('ref', () => {
   })
 })
 
-// test('string', complete => {
-//   run('{{ "a" }}', {}).subscribe({
-//     next: x => expect(x).toBe("a"),
-//     complete
-//   })
-// })
+test('string', complete => {
+  run('{{ "a" }}', {}).subscribe({
+    next: x => expect(x).toBe("a"),
+    complete
+  })
+})
