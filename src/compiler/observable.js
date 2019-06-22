@@ -7,10 +7,6 @@ module.exports = {
   compileObservables
 }
 
-function compileString ({ body }) {
-  return context => of(body)
-}
-
 function compileRef ({ name }) {
   return context => {
     const value = context[name]
@@ -148,8 +144,7 @@ function compileStringpart (node) {
   const { type } = node
   if (type === 'string') {
     const { body } = node
-    // return context => () => body
-    throw new Error('compileStringpart')
+    return context => () => body
   }
   return compileExpr(node)
 }
@@ -158,8 +153,8 @@ function compileStringparts ({ parts }) {
   const p = parts.map(compileStringpart)
   return context => {
     const pc = p.map(p => p(context))
-    // return () => pc.reduce((o, x) => o + String(x()), '')
-    throw new Error('compileStringparts')
+    const body = pc.reduce((o, x) => o + String(x()), '')
+    return of(body)
   }
 }
 
