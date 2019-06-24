@@ -7,6 +7,23 @@ module.exports = {
   compileObservables
 }
 
+const EXPR_MAP = {
+  add: compileAdd,
+  array: compileArray,
+  div: compileDiv,
+  func: compileFunc,
+  index: compileIndex,
+  member: compileMember,
+  mul: compileMul,
+  number: compileNumber,
+  object: compileObject,
+  pipe: compilePipe,
+  pow: compilePow
+  ref: compileRef,
+  stringparts: compileStringparts,
+  sub: compileSub
+}
+
 function compileRef ({ name }) {
   return context => {
     const value = context[name]
@@ -17,9 +34,6 @@ function compileRef ({ name }) {
     return isObservable(value) ? value : of(value)
   }
 }
-
-let i = 0
-let j = 0
 
 function compilePipe ({ parts }) {
   const p = parts.map(compileExpr)
@@ -85,6 +99,7 @@ function compileMember ({ node, property }) {
     const nc = n(context)
     return nc.pipe(map(obj => {
       if (!Object.hasOwnProperty.call(obj, property)) {
+        // TODO remove?
         throw new Error(`Undefined property ${property} in object ${JSON.stringify(obj)}`)
       }
       return obj[property]
@@ -134,7 +149,7 @@ function compileStringpart (node) {
   const { type } = node
   if (type === 'string') {
     const { body } = node
-    return context => () => body
+    return context => of(body)
   }
   return compileExpr(node)
 }
@@ -143,8 +158,9 @@ function compileStringparts ({ parts }) {
   const p = parts.map(compileStringpart)
   return context => {
     const pc = p.map(p => p(context))
-    const body = pc.reduce((o, x) => o + String(x()), '')
-    return of(body)
+    throw new Error('compileStringparts')
+    // const body = pc.reduce((o, x) => o + String(x()), '')
+    // return of(body)
   }
 }
 
@@ -204,50 +220,7 @@ function compileArithmeticExpr ({ left, right }, fn) {
 }
 
 function compileExpr (node) {
-  const { type } = node
-  if (type === 'pipe') {
-    return compilePipe(node)
-  }
-  if (type === 'ref') {
-    return compileRef(node)
-  }
-  if (type === 'func') {
-    return compileFunc(node)
-  }
-  if (type === 'member') {
-    return compileMember(node)
-  }
-  if (type === 'object') {
-    return compileObject(node)
-  }
-  if (type === 'stringparts') {
-    return compileStringparts(node)
-  }
-  if (type === 'index') {
-    return compileIndex(node)
-  }
-  if (type === 'array') {
-    return compileArray(node)
-  }
-  if (type === 'number') {
-    return compileNumber(node)
-  }
-  if (type === 'div') {
-    return compileDiv(node)
-  }
-  if (type === 'mul') {
-    return compileMul(node)
-  }
-  if (type === 'sub') {
-    return compileSub(node)
-  }
-  if (type === 'add') {
-    return compileAdd(node)
-  }
-  if (type === 'pow') {
-    return compilePow(node)
-  }
-  throw new Error(`Unexpected type ${node.type}`)
+  return EXPR_MAP[node.type](node)
 }
 
 function compileObservables ({ type, body }) {
