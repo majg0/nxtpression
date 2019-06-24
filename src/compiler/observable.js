@@ -10,17 +10,11 @@ module.exports = {
 function compileRef ({ name }) {
   return context => {
     const value = context[name]
-
     if (value === undefined) {
       // TODO augment message with source info
       throw new Error(`Undefined variable ${name}`)
     }
-
-    if (isObservable(value)) {
-      return value
-    }
-
-    return of(value)
+    return isObservable(value) ? value : of(value)
   }
 }
 
