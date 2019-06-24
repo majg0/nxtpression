@@ -1,11 +1,11 @@
 const { Observable, of, timer } = require('rxjs')
 const { switchMap, exhaustMap, take, tap } = require('rxjs/operators')
-const { tokenize, parse, compileObservables } = require('../src')
+const { tokenize, parse, compileExpr } = require('../src')
 
 function run (source, context) {
   const tokenTable = tokenize(source)
   const tree = parse(source, tokenTable)
-  const factory = compileObservables(tree)
+  const factory = compileExpr(tree)
   const stream = factory(context)
   return stream
 }
@@ -120,38 +120,42 @@ test('arithmetic', async () => {
   await runAsync('{{ 2 ^ 3 }}', {}, x => expect(x).toBe(8))
 })
 
-// describe('object', () => {
-//   it('handles a single static property name', async () => {
-//     await runAsync('{{ {a: 1} }}', {}, x => expect(x).toEqual({a: 1}))
-//   })
+describe('object', () => {
+  it('handles the empty object', async () => {
+    await runAsync('{{ {} }}', {}, x => expect(x).toEqual({}))
+  })
 
-//   it('handles multiple static property names', async () => {
-//     await runAsync('{{ {a: 1, b: 2} }}', {}, x => expect(x).toEqual({a: 1, b: 2}))
-//   })
+  it('handles a single static property name', async () => {
+    await runAsync('{{ {a: 1} }}', {}, x => expect(x).toEqual({a: 1}))
+  })
 
-//   it('handles a single dynamic property name', async () => {
-//     await runAsync(
-//       '{{ {[a]: 1} }}',
-//       { a: 'x' },
-//       x => expect(x).toEqual({ x: 1 }))
-//   })
+  it('handles multiple static property names', async () => {
+    await runAsync('{{ {a: 1, b: 2} }}', {}, x => expect(x).toEqual({a: 1, b: 2}))
+  })
 
-//   it('handles multiple dynamic property names', async () => {
-//     await runAsync(
-//       '{{ {[a]: 1, [b]: 2} }}',
-//       { a: 'x', b: 'y' },
-//       x => expect(x).toEqual({ x: 1, y: 2 })
-//     )
-//   })
+  it('handles a single dynamic property name', async () => {
+    await runAsync(
+      '{{ {[a]: 1} }}',
+      { a: 'x' },
+      x => expect(x).toEqual({ x: 1 }))
+  })
 
-//   it('handles mixed dynamic and static property names', async () => {
-//     await runAsync(
-//       '{{ {a: 1, [b]: 2} }}',
-//       { b: 'y' },
-//       x => expect(x).toEqual({ a: 1, y: 2 })
-//     )
-//   })
-// })
+  it('handles multiple dynamic property names', async () => {
+    await runAsync(
+      '{{ {[a]: 1, [b]: 2} }}',
+      { a: 'x', b: 'y' },
+      x => expect(x).toEqual({ x: 1, y: 2 })
+    )
+  })
+
+  it('handles mixed dynamic and static property names', async () => {
+    await runAsync(
+      '{{ {a: 1, [b]: 2} }}',
+      { b: 'y' },
+      x => expect(x).toEqual({ a: 1, y: 2 })
+    )
+  })
+})
 
 describe('pipe', () => {
   it('handles the simple intended case', async () => {
@@ -182,8 +186,9 @@ describe('pipe', () => {
     await runAsync(
       '{{ num | countTo() | mul(2) }}',
       {
-        num,
-        countTo: () => num => timer(0, 50).pipe(take(num))
+        countTo: () => num => timer(0, 50).pipe(take(num)),
+        mul,
+        num
       },
       expectToBe(i => i * 2)
     )
@@ -201,7 +206,25 @@ describe('ref', () => {
 })
 
 describe('string', () => {
+  it('handles the empty string', async () => {
+    await runAsync('{{ "" }}', {}, x => expect(x).toBe(''))
+  })
   it('handles a single string part', async () => {
-    await runAsync('{{ "a" }}', {}, x => expect(x).toBe("a"))
+    await runAsync('{{ "a" }}', {}, x => expect(x).toBe('a'))
+  })
+  it('handles a single nxtpression of the empty string', async () => {
+    await runAsync('{{ "{{ "" }}" }}', {}, x => expect(x).toBe(''))
+  })
+  it('does not convert lone inner nxtpressions to string', async () => {
+    await runAsync('{{ "{{ 1 }}" }}', {}, x => expect(x).toBe(1))
+  })
+  it('converts non-lone inner nxtpressions to string', async () => {
+    await runAsync('{{ "a{{ 1 }}" }}', {}, x => expect(x).toBe('a1'))
+  })
+  it('handles a single inner nxtpression of a single string', async () => {
+    await runAsync('{{ "{{ "a" }}" }}', {}, x => expect(x).toBe('a'))
+  })
+  it('handles combining string parts and nxtpressions', async () => {
+    await runAsync('{{ "hiy{{ "a" }} world" }}', {}, x => expect(x).toBe('hiya world'))
   })
 })

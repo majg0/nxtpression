@@ -63,6 +63,11 @@ function parse (source, tokenTable) {
         continue
       }
 
+      if (at === 'comma') {
+        consume()
+        continue
+      }
+
       if (at === 'identifier') {
         const ident = consume().body
         if (peek() === 'whitespace') {
@@ -350,24 +355,24 @@ function parse (source, tokenTable) {
   }
 
   function parseRootContext () {
-    const body = []
+    const parts = []
     let str = ''
     while (tokenTable.length) {
       const at = peek()
       if (at === 'otemplate') {
         if (str) {
-          body.push({ type: 'string', body: str })
+          parts.push({ type: 'string', body: str })
           str = ''
         }
-        body.push(parseTemplate())
+        parts.push(parseTemplate())
         continue
       }
       str += consume().body
     }
     if (str) {
-      body.push({ type: 'string', body: str })
+      parts.push({ type: 'string', body: str })
     }
-    return { type: 'root', body }
+    return { type: 'stringparts', parts }
   }
 
   return parseRootContext()

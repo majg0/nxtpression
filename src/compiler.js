@@ -4,7 +4,7 @@ const { tap } = require('rxjs/operators')
 const op = require('rxjs/operators')
 
 module.exports = {
-  compileObservables
+  compileExpr
 }
 
 const EXPR_MAP = {
@@ -18,10 +18,15 @@ const EXPR_MAP = {
   number: compileNumber,
   object: compileObject,
   pipe: compilePipe,
-  pow: compilePow
+  pow: compilePow,
   ref: compileRef,
+  string: compileString,
   stringparts: compileStringparts,
   sub: compileSub
+}
+
+function compileExpr (node) {
+  return EXPR_MAP[node.type](node)
 }
 
 function compileRef ({ name }) {
@@ -110,14 +115,10 @@ function compileMember ({ node, property }) {
 function compilePropPath (node) {
   const { type } = node
   if (type === 'constprop') {
-    const { value } = node
-    throw new Error('compilePropPath:constprop')
-    // return context => () => value
+    return context => of(node.value)
   }
   if (type === 'dynprop') {
-    const e = compileExpr(node.expr)
-    throw new Error('compilePropPath:dynprop')
-    // return context => e(context)
+    return compileExpr(node.expr)
   }
   throw new Error(`unexpected prop path type ${type}`)
 }
@@ -127,40 +128,39 @@ function compileProp ({ path, expr }) {
   const e = compileExpr(expr)
   return context => {
     const pc = p(context)
-    const pe = e(context)
-    // return [pc, pe]
-    throw new Error('compileProp')
+    const ec = e(context)
+    return combineLatest(pc, ec, (path, expr) => ({ [path]: expr }))
   }
 }
 
 function compileObject ({ props }) {
+  if (props.length === 0) {
+    return context => of({})
+  }
   const ps = props.map(compileProp)
   return context => {
     const psc = ps.map(p => p(context))
-    // return () => psc.reduce((o, [p, e]) => ({
-    //   ...o,
-    //   [p()]: e()
-    // }), {})
-    throw new Error('compileObject')
+    return combineLatest(psc, (...xs) => Object.assign(...xs))
   }
 }
 
-function compileStringpart (node) {
-  const { type } = node
-  if (type === 'string') {
-    const { body } = node
-    return context => of(body)
-  }
-  return compileExpr(node)
+function compileString (node) {
+  return context => of(node.body)
 }
 
 function compileStringparts ({ parts }) {
-  const p = parts.map(compileStringpart)
+  if (parts.length === 0) {
+    return context => of('')
+  }
+  if (parts.length === 1) {
+    return compileExpr(parts[0])
+  }
+  const p = parts.map(compileExpr)
   return context => {
-    const pc = p.map(p => p(context))
-    throw new Error('compileStringparts')
-    // const body = pc.reduce((o, x) => o + String(x()), '')
-    // return of(body)
+    return combineLatest(
+      p.map(p => p(context)),
+      (...strings) => strings.join('')
+    )
   }
 }
 
@@ -217,31 +217,4 @@ function compileArithmeticExpr ({ left, right }, fn) {
     const rc = r(context)
     return combineLatest(lc, rc).pipe(map(([l, r]) => fn(l, r)))
   }
-}
-
-function compileExpr (node) {
-  return EXPR_MAP[node.type](node)
-}
-
-function compileObservables ({ type, body }) {
-  if (body.length === 1) {
-    return compileExpr(body[0])
-  }
-
-  throw new Error('unimplemented!')
-
-  // return body
-  //   .map(node => {
-  //     if (node.type === 'string') {
-  //       return compileString(node)
-  //     }
-  //     return compileExpr(node)
-  //   })
-  //   .reduce((o, f) => {
-  //     return context => {
-  //       const oc = o(context)
-  //       const fc = f(context)
-  //       return () => oc() + fc()
-  //     }
-  //   }, context => () => '')
 }
