@@ -29,7 +29,7 @@ const TOKENS = [
   { re: /^{/, type: 'ocurly' },
   { re: /^}/, type: 'ccurly' },
   { re: /^:/, type: 'colon' },
-  { re: /^\^/, type: 'pow' },
+  { re: /^(?:\^|\*\*)/, type: 'pow' },
   { re: /^\*/, type: 'mul' },
   { re: /^\//, type: 'div' },
   { re: /^\+/, type: 'add' },

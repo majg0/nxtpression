@@ -116,8 +116,8 @@ test('arithmetic', async () => {
   await runAsync('{{ 5 - 2 }}', {}, x => expect(x).toBe(3))
   await runAsync('{{ 2 * 3 }}', {}, x => expect(x).toBe(6))
   await runAsync('{{ 6 / 2 }}', {}, x => expect(x).toBe(3))
-  // triggers compileMul at the moment, with "left" undefined
-  // await runAsync('{{ 2 ** 3 }}', {}, x => expect(x).toBe(8))
+  await runAsync('{{ 2 ** 3 }}', {}, x => expect(x).toBe(8))
+  await runAsync('{{ 2 ^ 3 }}', {}, x => expect(x).toBe(8))
 })
 
 // describe('object', () => {
