@@ -168,6 +168,9 @@ function compileArray ({ items }) {
   const i = items.map(compileExpr)
   return context => {
     const ic = i.map(i => i(context))
+    if (ic.length === 0) {
+      return of([])
+    }
     return combineLatest(ic)
   }
 }
