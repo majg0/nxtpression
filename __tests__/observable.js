@@ -154,7 +154,7 @@ test('arithmetic', async () => {
 // })
 
 describe('pipe', () => {
-  it('detects non-operator function returns and handles them as maps', async () => {
+  it('handles the simple intended case', async () => {
     await runAsync(
       '{{ 2 | mul(3) }}',
       { mul },
@@ -170,7 +170,7 @@ describe('pipe', () => {
     )
   })
 
-  it('handles pipes from functions to functions', async () => {
+  it('handles piping more than once', async () => {
     await runAsync(
       '{{ stream | sub(5) | mul(2) | add(1) }}',
       { sub, mul, add, stream: timer(0, 50).pipe(take(num)) },
@@ -178,13 +178,12 @@ describe('pipe', () => {
     )
   })
 
-  it('handles creating observables mid-pipe', async () => {
+  it('handles observables created mid-pipe', async () => {
     await runAsync(
-      '{{ num | countTo() | double() }}',
+      '{{ num | countTo() | mul(2) }}',
       {
         num,
-        countTo: () => num => timer(0, 50).pipe(take(num)),
-        double: () => x => x * 2
+        countTo: () => num => timer(0, 50).pipe(take(num))
       },
       expectToBe(i => i * 2)
     )
@@ -201,9 +200,8 @@ describe('ref', () => {
   })
 })
 
-test('string', complete => {
-  run('{{ "a" }}', {}).subscribe({
-    next: x => expect(x).toBe("a"),
-    complete
+describe('string', () => {
+  it('handles a single string part', async () => {
+    await runAsync('{{ "a" }}', {}, x => expect(x).toBe("a"))
   })
 })
