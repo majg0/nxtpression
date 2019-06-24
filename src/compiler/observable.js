@@ -31,16 +31,11 @@ function compilePipe ({ parts }) {
   const p = parts.map(compileExpr)
   return context => {
     const p$s = p.map(x => x(context))
-    // TODO: can't use combineLatest - if they complete, all ends...
     return combineLatest(p$s).pipe(
       switchMap(([value, ...transforms]) => {
-        console.log('start transforming', value, 'with', transforms)
         function reduce (value, index) {
-          console.log('red', value, index)
           while (index < transforms.length) {
             const transform = transforms[index++]
-
-            console.log('transforming with', transform)
 
             if (typeof value === 'function') {
               const func = value
@@ -49,10 +44,7 @@ function compilePipe ({ parts }) {
               value = transform(value)
             }
 
-            console.log('produced', value)
-
             if (isObservable(value)) {
-              console.log('switching to...', index)
               return value.pipe(
                 switchMap(value => reduce(value, index))
               )
@@ -74,17 +66,21 @@ function compileFunc ({ path, args }) {
   return context => {
     const func$ = p(context)
     const arg$s = as.map(a => a(context))
-    return combineLatest(
-      func$,
-      combineLatest(arg$s)
-    ).pipe(
-      switchMap(([func, args]) => {
-        const result = func(...args)
-        if (isObservable(result)) {
-          return result
-        }
-        return of(result)
-      })
+
+    if (arg$s.length === 0) {
+      return func$.pipe(switchMap(func => {
+        const result = func()
+        return isObservable(result) ? result : of(result)
+      }))
+    }
+
+    return func$.pipe(
+      switchMap(func => combineLatest(arg$s).pipe(
+        switchMap(args => {
+          const result = func(...args)
+          return isObservable(result) ? result : of(result)
+        })
+      ))
     )
   }
 }
