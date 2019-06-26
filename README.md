@@ -1,34 +1,37 @@
 # nxtpression
 
-## What / Why
+Simple observable-based template language
 
-Originally aimed at replacing a hacky compiler for a nxtedition-internal template language inspired by jinja2 templates, in order to be able to provide more advanced language features and tooling around it
+1. Write your template
+2. Compile it
+3. Run it with a context
 
-Intends to draw some inspirated from observablehq
-
-The following contrived example shows the basic idea
-
+Example:
 ```js
 'carrot {{ ids | map(slice(2)) | join("") }} stick?'
  // { ids: ['foo', 'bar'] } -> 'carrot or stick?'
  // { ids: ['..&'] } -> 'carrot & stick?'
 ```
 
-## How
-
-Basically [this](https://www.destroyallsoftware.com/screencasts/catalog/a-compiler-from-scratch)
-
 ## Roadmap
 
 ### Current priorities
 
-- compile to reactive templates
-- add tests, reduce surface area, better errors
-- conform with (compileTemplate, resolveTemplate, compileObjectTemplate) as found at https://github.com/nxtedition/nxt-lib/blob/master/src/util/template/index.js
+- more extensive tests
+- remove arithmetic ops and groups
+- better error messages from compile.js
+- add logical branching
+- add early returns
+- asFilter helpers
+- document supported features in readme
+- conform with (compileTemplate, resolveTemplate, compileObjectTemplate) as found at https://github.com/nxtedition/nxt-lib/blob/master/src/util/template/
+- npm package
 
 ### For future consideration
 
-- documentation, tutorial
-- dedicated website
 - visual node based editor inspired by UE4 blueprints
-- integration with monaco
+- monaco integration
+
+## Credit
+
+Inspired by destroyallsoftware’s [a compiler from scratch](https://www.destroyallsoftware.com/screencasts/catalog/a-compiler-from-scratch)
