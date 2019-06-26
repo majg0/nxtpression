@@ -2,16 +2,19 @@
 
 Simple observable-based template language
 
-1. Write your template
-2. Compile it
-3. Run it with a context
-
-Example:
 ```js
-'carrot {{ ids | map(slice(2)) | join("") }} stick?'
- // { ids: ['foo', 'bar'] } -> 'carrot or stick?'
- // { ids: ['..&'] } -> 'carrot & stick?'
+import { of } from 'rxjs'
+import nxtpr from 'nxtpression'
+
+nxtpr.generate('{{names|greet}}', {
+  names: of("Mike", "Ike"),
+  greet: x => `Hi ${x}.`
+}).subscribe(console.log)
+// Hi Mike.
+// Hi Ike.
 ```
+
+You can get much fancier than that.
 
 ## Roadmap
 
