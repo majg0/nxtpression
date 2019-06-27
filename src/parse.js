@@ -163,31 +163,6 @@ function parse (source, tokenTable) {
     return { type: 'index', node, expr }
   }
 
-  function parseDiv (left) {
-    consume('div')
-    return { type: 'div', left, right: parseExpr() }
-  }
-
-  function parseMul (left) {
-    consume('mul')
-    return { type: 'mul', left, right: parseExpr() }
-  }
-
-  function parseAdd (left) {
-    consume('add')
-    return { type: 'add', left, right: parseExpr() }
-  }
-
-  function parseSub (left) {
-    consume('sub')
-    return { type: 'sub', left, right: parseExpr() }
-  }
-
-  function parsePow (left) {
-    consume('pow')
-    return { type: 'pow', left, right: parseExpr() }
-  }
-
   function parseMemberAccess (node) {
     const member = consume('member')
     if (peek() === 'whitespace') {
@@ -235,6 +210,16 @@ function parse (source, tokenTable) {
     const expr = parseExpr()
     consume('cround')
     return expr
+  }
+
+  function parseNull () {
+    consume('null')
+    return { type: 'null' }
+  }
+
+  function parseUndefined () {
+    consume('undefined')
+    return { type: 'undefined' }
   }
 
   function parseExpr () {
@@ -310,30 +295,13 @@ function parse (source, tokenTable) {
         continue
       }
 
-      // TODO precedence / order?
-
-      if (at === 'div') {
-        prev = parseDiv(prev)
+      if (at === 'undefined') {
+        prev = parseUndefined(prev)
         continue
       }
 
-      if (at === 'mul') {
-        prev = parseMul(prev)
-        continue
-      }
-
-      if (at === 'add') {
-        prev = parseAdd(prev)
-        continue
-      }
-
-      if (at === 'sub') {
-        prev = parseSub(prev)
-        continue
-      }
-
-      if (at === 'pow') {
-        prev = parsePow(prev)
+      if (at === 'null') {
+        prev = parseNull(prev)
         continue
       }
 

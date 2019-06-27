@@ -1,14 +1,6 @@
 const { Observable, of, timer } = require('rxjs')
 const { switchMap, exhaustMap, take, tap } = require('rxjs/operators')
-const { tokenize, parse, compileExpr } = require('../src')
-
-function run (source, context) {
-  const tokenTable = tokenize(source)
-  const tree = parse(source, tokenTable)
-  const factory = compileExpr(tree)
-  const stream = factory(context)
-  return stream
-}
+const nxtpr = require('../src')
 
 async function runAsync (source, context, tests) {
   if (!Array.isArray(tests)) {
@@ -18,7 +10,11 @@ async function runAsync (source, context, tests) {
   return new Promise((resolve, reject) => {
     let i = 0
 
-    run(source, context).subscribe(onNext, onError, onComplete)
+    if (typeof source === 'object' && source !== null) {
+      nxtpr.compileObjectTemplate(source)(context).subscribe(onNext, onError, onComplete)
+    } else {
+      nxtpr.produceObservable(source, context).subscribe(onNext, onError, onComplete)
+    }
 
     function onNext (x) {
       const f = tests[i]
@@ -57,6 +53,17 @@ const map = f => x => x.map(f)
 const expectToBe = (f, length=num) => Array.from({ length }, (_, i) =>
   x => expect(x).toBe(f(i))
 )
+const expectToEqual = (f, length=num) => Array.from({ length }, (_, i) =>
+  x => expect(x).toEqual(f(i))
+)
+
+test('compileObjectTemplate', async () => {
+  await runAsync(
+    { a: 1, b: { c: '{{ win }}' }, d: '3', e: { f: '{{ 4 }}', } },
+    { win: timer(0, 50).pipe(take(5)) },
+    expectToEqual(c => ({ a: 1, b: { c }, d: '3', e: { f: 4 } }))
+  )
+})
 
 describe('array', () => {
   it('handles a single entry', async () => {
@@ -65,6 +72,10 @@ describe('array', () => {
 
   it('handles multiple entries', async () => {
     await runAsync('{{ [1, 2] }}', {}, x => expect(x).toEqual([1, 2]))
+  })
+
+  it('handles inner observables', async () => {
+    await runAsync('{{ [foo, 2] }}', { foo: of(1) }, x => expect(x).toEqual([1, 2]))
   })
 })
 
@@ -98,26 +109,54 @@ describe('func', () => {
   })
 })
 
-test('index', async () => {
-  await runAsync('{{ a[b] }}', { a: { c: 4 }, b: 'c'  }, x => expect(x).toBe(4))
+describe('index', () => {
+  it('handles object properties', async () => {
+    await runAsync('{{ a[b] }}', { a: { c: 4 }, b: 'c'  }, x => expect(x).toBe(4))
+  })
+
+  it('handles observables\'s object properties', async () => {
+    await runAsync('{{ a[b] }}', { a: of({ c: 4 }), b: 'c'  }, x => expect(x).toBe(4))
+  })
+
+  it('handles indexing with observables', async () => {
+    await runAsync('{{ a[b] }}', { a: { c: 4 }, b: of('c')  }, x => expect(x).toBe(4))
+  })
+
+  it('handles returned observables', async () => {
+    await runAsync('{{ a[b] }}', { a: { c: of(4) }, b: 'c'  }, x => expect(x).toBe(4))
+  })
 })
 
-test('member', async () => {
-  await runAsync('{{ foo.bar }}', { foo: { bar: 5 } }, x => expect(x).toBe(5))
+describe('member', () => {
+  it('handles object properties', async () => {
+    await runAsync('{{ foo.bar }}', { foo: { bar: 5 } }, x => expect(x).toBe(5))
+  })
+
+  it('handles observable\'s object properties', async () => {
+    await runAsync('{{ foo.bar }}', { foo: of({ bar: 5 }) }, x => expect(x).toBe(5))
+  })
+
+  it('handles returned observables', async () => {
+    await runAsync('{{ foo.bar }}', { foo: { bar: of(5) } }, x => expect(x).toBe(5))
+  })
 })
 
-test('number', async () => {
-  await runAsync('{{ 1 }}', {}, x => expect(x).toBe(1))
+describe('null', () => {
+  it('handles the null keyword', async () => {
+    await runAsync('{{ null }}', {}, x => expect(x).toBe(null))
+  })
 })
 
-test('arithmetic', async () => {
-  await runAsync('{{ 2+3 }}', {}, x => expect(x).toBe(5))
-  await runAsync('{{ 2 + 3 }}', {}, x => expect(x).toBe(5))
-  await runAsync('{{ 5 - 2 }}', {}, x => expect(x).toBe(3))
-  await runAsync('{{ 2 * 3 }}', {}, x => expect(x).toBe(6))
-  await runAsync('{{ 6 / 2 }}', {}, x => expect(x).toBe(3))
-  await runAsync('{{ 2 ** 3 }}', {}, x => expect(x).toBe(8))
-  await runAsync('{{ 2 ^ 3 }}', {}, x => expect(x).toBe(8))
+describe('number', () => {
+  it('handles integers', async () => {
+    await runAsync('{{ 1 }}', {}, x => expect(x).toBe(1))
+    await runAsync('{{ 12345 }}', {}, x => expect(x).toBe(12345))
+  })
+
+  it('handles floating point numbers', async () => {
+    await runAsync('{{ 1.2345 }}', {}, x => expect(x).toBe(1.2345))
+    await runAsync('{{ 1234.5 }}', {}, x => expect(x).toBe(1234.5))
+  })
 })
 
 describe('object', () => {
@@ -129,6 +168,10 @@ describe('object', () => {
     await runAsync('{{ {a: 1} }}', {}, x => expect(x).toEqual({a: 1}))
   })
 
+  it('handles a single observable property', async () => {
+    await runAsync('{{ {a: foo} }}', { foo: of(1) }, x => expect(x).toEqual({a: 1}))
+  })
+
   it('handles multiple static property names', async () => {
     await runAsync('{{ {a: 1, b: 2} }}', {}, x => expect(x).toEqual({a: 1, b: 2}))
   })
@@ -137,6 +180,13 @@ describe('object', () => {
     await runAsync(
       '{{ {[a]: 1} }}',
       { a: 'x' },
+      x => expect(x).toEqual({ x: 1 }))
+  })
+
+  it('handles a single observable property name', async () => {
+    await runAsync(
+      '{{ {[a]: 1} }}',
+      { a: of('x') },
       x => expect(x).toEqual({ x: 1 }))
   })
 
@@ -196,7 +246,7 @@ describe('pipe', () => {
 })
 
 describe('ref', () => {
-  it('handles number refs', async () => {
+  it('handles non-observable refs', async () => {
     await runAsync('{{ a }}', { a: 1 }, x => expect(x).toBe(1))
   })
 
@@ -226,5 +276,11 @@ describe('string', () => {
   })
   it('handles combining string parts and nxtpressions', async () => {
     await runAsync('{{ "hiy{{ "a" }} world" }}', {}, x => expect(x).toBe('hiya world'))
+  })
+})
+
+describe('undefined', () => {
+  it('handles the undefined keyword', async () => {
+    await runAsync('{{ undefined }}', {}, x => expect(x).toBe(undefined))
   })
 })

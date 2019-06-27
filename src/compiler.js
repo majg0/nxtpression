@@ -8,25 +8,30 @@ module.exports = {
 }
 
 const EXPR_MAP = {
-  add: compileAdd,
   array: compileArray,
-  div: compileDiv,
   func: compileFunc,
   index: compileIndex,
   member: compileMember,
-  mul: compileMul,
+  null: compileNull,
   number: compileNumber,
   object: compileObject,
   pipe: compilePipe,
-  pow: compilePow,
   ref: compileRef,
   string: compileString,
   stringparts: compileStringparts,
-  sub: compileSub
+  undefined: compileUndefined
 }
 
 function compileExpr (node) {
   return EXPR_MAP[node.type](node)
+}
+
+function compileNull (node) {
+  return context => of(null)
+}
+
+function compileUndefined (node) {
+  return context => of(undefined)
 }
 
 function compileRef ({ name }) {
@@ -102,12 +107,16 @@ function compileMember ({ node, property }) {
   const n = compileExpr(node)
   return context => {
     const nc = n(context)
-    return nc.pipe(map(obj => {
+    return nc.pipe(switchMap(obj => {
       if (!Object.hasOwnProperty.call(obj, property)) {
         // TODO remove?
         throw new Error(`Undefined property ${property} in object ${JSON.stringify(obj)}`)
       }
-      return obj[property]
+      const value = obj[property]
+      if (isObservable(value)) {
+        return value
+      }
+      return of(value)
     }))
   }
 }
@@ -170,7 +179,15 @@ function compileIndex ({ node, expr }) {
   return context => {
     const nc = n(context)
     const ec = e(context)
-    return combineLatest(nc, ec, (n, e) => n[e])
+    return combineLatest(nc, ec).pipe(
+      switchMap(([n, e]) => {
+        const value = n[e]
+        if (isObservable(value)) {
+          return value
+        }
+        return of(value)
+      })
+    )
   }
 }
 
