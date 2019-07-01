@@ -208,11 +208,19 @@ describe('object', () => {
 })
 
 describe('pipe', () => {
-  it('handles the simple intended case', async () => {
+  it('handles piping to func', async () => {
     await runAsync(
       '{{ 2 | mul(3) }}',
       { mul },
       x => expect(x).toBe(6),
+    )
+  })
+
+  it('handles piping to ref', async () => {
+    await runAsync(
+      '{{ "ff" | parseHex }}',
+      { parseHex: x => Number.parseInt(x, 16) },
+      x => expect(x).toBe(255),
     )
   })
 

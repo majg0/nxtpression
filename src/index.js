@@ -1,19 +1,33 @@
 const { combineLatest, of, throwError } = require('rxjs')
 const { first, map } = require('rxjs/operators')
 const { tokenize } = require('./tokenize')
-const { parse } = require('./parse')
-const { compileExpr } = require('./compiler')
+const { parseFromTokens } = require('./parse')
+const { IGNORE, compileFromAST } = require('./compiler')
+
+module.exports = {
+  IGNORE,
+  compileFromAST,
+  compileObjectTemplate,
+  compileTemplate,
+  isTemplate,
+  parseFromSource,
+  parseFromTokens,
+  produceObservable,
+  resolveObjectTemplate,
+  resolveTemplate,
+  tokenize
+}
 
 function isTemplate (value) {
   return typeof value === 'string' && value.indexOf('{{') !== -1
 }
 
-function parseAST (source) {
-  return parse(source, tokenize(source))
+function parseFromSource (source) {
+  return parseFromTokens(source, tokenize(source))
 }
 
 function compileTemplate (source) {
-  return compileExpr(parseAST(source))
+  return compileFromAST(source, parseFromSource(source))
 }
 
 function produceObservable (source, context) {
@@ -79,13 +93,6 @@ function compileObjectTemplate (obj) {
         return acc
       }, {})
     )
-}
-
-
-module.exports = {
-  compileObjectTemplate,
-  produceObservable,
-  tokenize
 }
 
 // https://github.com/lodash/lodash/blob/aa1d7d870d9cf84842ee23ff485fd24abf0ed3d1/isPlainObject.js

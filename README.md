@@ -20,14 +20,10 @@ You can get much fancier than that!
 
 ### Current priorities
 
-- more extensive tests
-- better error messages from compile.js
-- add logical branching
-- add early returns
-- asFilter helpers
+- add standard library
 - document supported features in readme
 - verify conformance with https://github.com/nxtedition/nxt-lib/blob/master/src/util/template/
-- npm package
+- add logical branching
 
 ### For future consideration
 

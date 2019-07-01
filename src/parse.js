@@ -2,13 +2,18 @@ const { ESCAPED } = require('./tokenize')
 const { getErrorFormatter } = require('./util')
 
 module.exports = {
-  parse
+  parseFromTokens
 }
 
-function parse (source, tokenTable) {
+function parseFromTokens (source, tokens) {
+  const tokenTable = [...tokens]
+
   const err = getErrorFormatter(
-    source, () => tokenTable.length === 0 ? source.length : tokenTable[0].start
+    source,
+    () => tokenTable.length === 0 ? source.length : tokenTable[0].start
   )
+
+  return parseRootContext()
 
   function consume (expectedType) {
     const token = tokenTable.shift()
@@ -49,7 +54,8 @@ function parse (source, tokenTable) {
   }
 
   function parseIdentifier () {
-    return { type: 'ref', name: consume().body }
+    const token = consume()
+    return { type: 'ref', name: token.body, col: token.start }
   }
 
   function parseObject () {
@@ -342,6 +348,4 @@ function parse (source, tokenTable) {
     }
     return { type: 'stringparts', parts }
   }
-
-  return parseRootContext()
 }
