@@ -5,17 +5,18 @@ const { parseFromTokens } = require('./parse')
 const { IGNORE, compileFromAST } = require('./compiler')
 
 module.exports = {
-  IGNORE,
-  compileFromAST,
-  compileObjectTemplate,
-  compileTemplate,
-  isTemplate,
-  parseFromSource,
+  tokenize,
   parseFromTokens,
+  parseFromSource,
+  compileFromAST,
+  IGNORE,
+  isTemplate,
+  compileTemplate,
+  compileObjectTemplate,
   produceObservable,
-  resolveObjectTemplate,
+  produceObjectObservable,
   resolveTemplate,
-  tokenize
+  resolveObjectTemplate
 }
 
 function isTemplate (value) {
@@ -34,6 +35,10 @@ function produceObservable (source, context) {
   return compileTemplate(source)(context)
 }
 
+function produceObjectObservable (source, context) {
+  return compileObjectTemplate(source)(context)
+}
+
 async function resolveTemplate (source, context) {
   if (!isTemplate(source)) {
     return Promise.resolve(source)
@@ -47,7 +52,7 @@ async function resolveTemplate (source, context) {
 
 async function resolveObjectTemplate (obj, context) {
   try {
-    return compileObjectTemplate(obj)(context).pipe(first()).toPromise()
+    return produceObjectObservable(obj, context).pipe(first()).toPromise()
   } catch (err) {
     return Promise.reject(err)
   }
