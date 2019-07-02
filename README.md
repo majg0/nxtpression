@@ -1,4 +1,4 @@
-# nxtpression
+# :dizzy: nxtpression
 
 Friendly observable-based template expression library.
 
@@ -16,7 +16,7 @@ nxtpr.produceObservable('{{names|greet}}', {
 
 You can get much fancier than that!
 
-## API
+## :joystick: API
 
 ### Core
 
@@ -46,19 +46,9 @@ Compiles a template string from an AST. Will not throw.
 
 <details><summary><code>IGNORE: Symbol</code></summary>
 
-Consider running
+Consider running `{{ 4 | ignoreEven | doSideEffect }}` with `ignoreEven: x => x % 2 === 0 ? IGNORE : x`
 
-```
-{{ 4 | ignoreEven | doSideEffect }}
-```
-
-with
-
-```js
-ignoreEven: x => x % 2 === 0 ? IGNORE : x
-```
-
-This will not perform the side effect.
+This will not perform the side effect, because once an IGNORE value is discovered it will be emitted immediately.
 
 WARNING: this WILL emit the `IGNORE` symbol once, in order to ensure that observables complete.
 
@@ -108,20 +98,145 @@ Like `resolveTemplate` but for object templates, this `Promise`s the latest valu
 
 For the most detailed info, read [__tests__/observable.js](__tests__/observable.js).
 
-## Roadmap
+**NOTE: Everything is an expression - returning either an observable or just a value.**
 
-### Current priorities
+<details><summary>Array <code>[foo, bar]</code></summary>
 
-- add standard library
+```
+{{ [1] }}
+{{ [1, 2] }}
+{{ [foo, 2] }}
+```
+
+</details>
+
+<details><summary>Function Call <code>foo(bar)</code></summary>
+
+```
+{{ of(1, 2) }}
+{{ seq(period, num) }}
+{{ mul(2)(3) }}
+```
+
+</details>
+
+
+<details><summary>Index <code>foo[bar]</code></summary>
+
+```
+{{ a[b] }}
+```
+
+</details>
+
+<details><summary>Member <code>foo.bar</code></summary>
+
+```
+{{ foo.bar }}
+```
+
+</details>
+
+<details><summary>Null <code>null</code></summary>
+
+```
+{{ null }}
+```
+
+</details>
+
+<details><summary>Number <code>1.23</code></summary>
+
+WARNING: this does not support scientific notation like `1e3`
+
+```
+{{ 12 }}
+{{ 1.2345 }}
+```
+
+</details>
+
+<details><summary>Object <code>{ foo: foo, [bar]: baz }</code></summary>
+
+Supports both static and dynamic keys
+
+WARNING: does not yet support the same-name utility syntax `{ foo }`
+
+```
+{{ {} }}
+{{ { a: 1 } }}
+{{ { a: foo } }}
+{{ { a: 1, b: 2 } }}
+{{ { [a]: 1 } }}
+{{ { [a]: 1, [b]: 2 } }}
+{{ { a: 1, [b]: 2 } }}
+```
+
+</details>
+
+<details><summary>Pipe <code>foo | bar</code></summary>
+
+```
+{{ 2 | mul(3) }}
+{{ "ff" | parseHex }}
+{{ stream | sub(5) | mul(2) | add(1) }}
+{{ x | map(mul(2) | add(1)) }}
+```
+
+</details>
+
+<details><summary>Reference <code>foo</code></summary>
+
+```
+{{ a }}
+{{ myVar }}
+```
+
+</details>
+
+<details><summary>String <code>"foo {{ bar }}"</code></summary>
+
+A bit more complicated, since nested templates are supported.
+Strings can be delimited either by `'`s or `"`s.
+
+WARNING: can't use ` delimiters
+
+```
+{{ "" }}  // ''
+{{ '' }}  // ''
+{{ "a" }} // 'a'
+{{ "{{ "" }}" }}  // ''
+{{ "{{ 1 }}" }}   // 1
+{{ "a{{ 1 }}" }}  // 'a1'
+{{ "{{ "a" }}" }} // 'a'
+{{ "hell{{ "o" }} world" }} // 'hello world'
+```
+
+</details>
+
+<details><summary>Undefined <code>undefined</code></summary>
+
+```
+{{ undefined }}
+```
+
+</details>
+
+## :hourglass_flowing_sand: Roadmap
+
+### Current Priorities
+
 - document supported features in readme
+- add standard library
 - verify conformance with https://github.com/nxtedition/nxt-lib/blob/master/src/util/template/
 - add logical branching
 
-### For future consideration
+### For Future Consideration
 
 - visual node based editor inspired by UE4 blueprints
 - monaco integration
 
-## Credit
+## :trophy: Credit
 
 Inspired by destroyallsoftware’s [a compiler from scratch](https://www.destroyallsoftware.com/screencasts/catalog/a-compiler-from-scratch)
+Prior art includes [jinja2](http://jinja.pocoo.org/docs/2.10/) and [nxtedition templates](https://github.com/nxtedition/nxt-lib/tree/master/util/template)
