@@ -228,7 +228,11 @@ WARNING: can't use ` delimiters
 
 ## :electric_plug: Installation
 
-With [npm](https://www.npmjs.com/get-npm) installed, you may run `npm i nxtpression`.
+With [npm](https://www.npmjs.com/get-npm) installed;
+
+```
+npm i nxtpression
+```
 
 ## :hourglass_flowing_sand: Roadmap
 
