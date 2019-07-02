@@ -70,9 +70,7 @@ This utility function will `tokenize`, `parseFromTokens` and `compileFromAST` in
 
 <details><summary><code>compileObjectTemplate: obj => (context => Observable)</code></summary>
 
-Compiles and combines all templates in an object recursively.
-
-WARNING: templates in arrays are not supported.
+Compiles and combines all templates in an object or array recursively.
 
 </details>
 

@@ -59,9 +59,9 @@ const expectToEqual = (f, length=num) => Array.from({ length }, (_, i) =>
 
 test('compileObjectTemplate', async () => {
   await runAsync(
-    { a: 1, b: { c: '{{ win }}' }, d: '3', e: { f: '{{ 4 }}', } },
+    { a: 1, b: { c: '{{ win }}' }, d: '3', e: [{ f: '{{ 4 }}' }] },
     { win: timer(0, 50).pipe(take(5)) },
-    expectToEqual(c => ({ a: 1, b: { c }, d: '3', e: { f: 4 } }))
+    expectToEqual(c => ({ a: 1, b: { c }, d: '3', e: [{ f: 4 }] }))
   )
 })
 

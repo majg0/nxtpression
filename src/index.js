@@ -64,6 +64,8 @@ function compileObjectTemplate (obj) {
     for (const [k, v] of Object.entries(o)) {
       const pk = [...p, k]
       if (typeof v === 'object' && v !== null) {
+        const x = Array.isArray(v) ? [] : {}
+        resolvers.push([pk, context => of(x)])
         compile(pk, v)
       } else if (isTemplate(v)) {
         resolvers.push([pk, compileTemplate(v)])
@@ -81,12 +83,8 @@ function compileObjectTemplate (obj) {
       (...resolved) => resolved.reduce((acc, [path, value]) => {
         const p = [...path]
         let obj = acc
-        const lastIndex = p.length - 1
         while (p.length > 1) {
           const prop = p.shift()
-          if (!obj[prop]) {
-            obj[prop] = {}
-          }
           obj = obj[prop]
         }
         obj[p.shift()] = value
