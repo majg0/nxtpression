@@ -1,4 +1,4 @@
-# {{ nxtpression }}
+# nxtpression
 
 Friendly observable-based template expression library.
 
