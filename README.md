@@ -14,7 +14,7 @@ nxtpr.produceObservable('{{names|greet}}', {
 // Hi Ike.
 ```
 
-You can get much fancier than that!
+You can get much fancier than that though!
 
 ## :joystick: API
 
@@ -82,6 +82,12 @@ This utility function will just `compileTemplate(source)(context)`.
 
 </details>
 
+<details><summary><code>produceObjectObservable: (obj, context) => Observable</code></summary>
+
+This utility function will just `compileObjectTemplate(source)(context)`.
+
+</details>
+
 <details><summary><code>resolveTemplate: (source, context) => Promise</code></summary>
 
 This creates a `Promise` awaiting the first value emitted by a template compiled from source directly when applied with the given context.
@@ -95,8 +101,6 @@ Like `resolveTemplate` but for object templates, this `Promise`s the latest valu
 </details>
 
 ### Syntax
-
-For the most detailed info, read [__tests__/observable.js](__tests__/observable.js).
 
 **NOTE: Everything is an expression - returning either an observable or just a value.**
 
@@ -197,7 +201,9 @@ WARNING: does not yet support the same-name utility syntax `{ foo }`
 <details><summary>String <code>"foo {{ bar }}"</code></summary>
 
 A bit more complicated, since nested templates are supported.
-Strings can be delimited either by `'`s or `"`s.
+Strings can be delimited by either `'`s or `"`s.
+
+WARNING: templates inside non-empty strings will have to convert all emissions to `String`.
 
 WARNING: can't use ` delimiters
 
