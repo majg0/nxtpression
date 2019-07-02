@@ -1,4 +1,4 @@
-# :dizzy: nxtpression
+# nxtpression
 
 Friendly observable-based template expression library.
 
@@ -226,12 +226,15 @@ WARNING: can't use ` delimiters
 
 </details>
 
+## :electric_plug: Installation
+
+With [npm](https://www.npmjs.com/get-npm) installed, you may run `npm i nxtpression`.
+
 ## :hourglass_flowing_sand: Roadmap
 
 ### Current Priorities
 
-- document supported features in readme
-- add standard library
+- add a standard library
 - verify conformance with https://github.com/nxtedition/nxt-lib/blob/master/src/util/template/
 - add logical branching
 
