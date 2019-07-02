@@ -59,7 +59,7 @@ function compileFromAST (source, root) {
         switchMap(([value, ...transforms]) => {
           function reduce (value, index) {
             if (value === IGNORE) {
-              return of(null)
+              return of(value)
             }
 
             while (index < transforms.length) {
@@ -73,7 +73,7 @@ function compileFromAST (source, root) {
               }
 
               if (value === IGNORE) {
-                return of(null)
+                return of(value)
               }
 
               if (isObservable(value)) {
