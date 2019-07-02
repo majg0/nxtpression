@@ -244,5 +244,6 @@ WARNING: can't use ` delimiters
 
 ## :trophy: Credit
 
-Inspired by destroyallsoftware’s [a compiler from scratch](https://www.destroyallsoftware.com/screencasts/catalog/a-compiler-from-scratch)
-Prior art includes [jinja2](http://jinja.pocoo.org/docs/2.10/) and [nxtedition templates](https://github.com/nxtedition/nxt-lib/tree/master/util/template)
+Inspired by destroyallsoftware’s [a compiler from scratch](https://www.destroyallsoftware.com/screencasts/catalog/a-compiler-from-scratch).
+
+Prior art includes [jinja2](http://jinja.pocoo.org/docs/2.10/) and [nxtedition templates](https://github.com/nxtedition/nxt-lib/tree/master/util/template).
