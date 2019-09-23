@@ -58,6 +58,11 @@ function parseFromTokens (source, tokens) {
     return { type: 'ref', name: token.body, col: token.start }
   }
 
+  function parseBoolean () {
+    const token = consume()
+    return { type: 'boolean', value: token.body !== 'false', col: token.start }
+  }
+
   function parseObject () {
     const ocurly = consume('ocurly')
     const props = []
@@ -313,6 +318,11 @@ function parseFromTokens (source, tokens) {
 
       if (at === 'otemplate') {
         throw new Error(err('Can only open templates inside strings'))
+      }
+
+      if (at === 'boolean') {
+        prev = parseBoolean()
+        continue
       }
 
       throw new Error(err(`Unknown token type ${at}`))

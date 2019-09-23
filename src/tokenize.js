@@ -20,6 +20,7 @@ const TOKENS = [
   { re: /^,/, type: 'comma' },
   { re: /^undefined/, type: 'undefined' },
   { re: /^null/, type: 'null' },
+  { re: /^true|^false/, type: 'boolean' },
   { re: /^-?[0-9]+(?:\.[0-9]+)?/, type: 'number' },
   { re: /^[a-zA-Z][a-zA-Z0-9]*/, type: 'identifier' },
   { re: /^\(/, type: 'oround' },

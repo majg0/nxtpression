@@ -287,6 +287,15 @@ describe('string', () => {
   })
 })
 
+describe('boolean', () => {
+  it('handles true', async () => {
+    await runAsync('{{ true }}', {}, x => expect(x).toBe(true))
+  })
+  it('handles false', async () => {
+    await runAsync('{{ false }}', {}, x => expect(x).toBe(false))
+  })
+})
+
 describe('undefined', () => {
   it('handles the undefined keyword', async () => {
     await runAsync('{{ undefined }}', {}, x => expect(x).toBe(undefined))

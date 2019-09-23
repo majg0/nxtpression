@@ -14,6 +14,7 @@ function compileFromAST (source, root) {
 
   const EXPR_MAP = {
     array: compileArray,
+    boolean: compileBoolean,
     func: compileFunc,
     index: compileIndex,
     member: compileMember,
@@ -39,6 +40,10 @@ function compileFromAST (source, root) {
 
   function compileUndefined (node) {
     return context => of(undefined)
+  }
+
+  function compileBoolean ({ value }) {
+    return context => of(value)
   }
 
   function compileRef ({ name, col }) {
