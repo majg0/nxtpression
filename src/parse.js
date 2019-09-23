@@ -314,6 +314,8 @@ function parseFromTokens (source, tokens) {
       if (at === 'otemplate') {
         throw new Error(err('Can only open templates inside strings'))
       }
+
+      throw new Error(err(`Unknown token type ${at}`))
     }
     throw new Error(err('Expression not terminated'))
   }
