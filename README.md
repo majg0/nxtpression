@@ -16,155 +16,73 @@ nxtpr.produceObservable('{{names|greet}}', {
 
 You can get much fancier than that though!
 
-## :joystick: API
+## :baby_symbol: Syntax Reference
 
-### Core
+**NOTE: Every expression represents a stream of values. Mix and match as you see wish!**
 
-<details><summary><code>tokenize: source => tokens</code></summary>
-
-Tokenizes source string. Will throw on unexpected token.
-
-</details>
-
-<details><summary><code>parseFromTokens: (source, tokens) => AST</code></summary>
-
-Parses tokens into abstract syntax tree. Will throw on invalid semantics.
-
-</details>
-
-<details><summary><code>parseFromSource: source => AST</code></summary>
-
-This utility function will `tokenize` and `parseFromTokens` in one go.
-
-</details>
-
-<details><summary><code>compileFromAST: (source, AST) => (context => Observable)</code></summary>
-
-Compiles a template string from an AST. Will not throw.
-
-</details>
-
-<details><summary><code>IGNORE: Symbol</code></summary>
-
-Consider running `{{ 4 | ignoreEven | doSideEffect }}` with `ignoreEven: x => x % 2 === 0 ? IGNORE : x`
-
-This will not perform the side effect, because once an IGNORE value is discovered it will be emitted immediately.
-
-WARNING: this WILL emit the `IGNORE` symbol once, in order to ensure that observables complete.
-
-</details>
-
-<details><summary><code>isTemplate: string => Boolean</code></summary>
-
-If a value is a string containing `'{{'`, this will return `true`.
-
-WARNING: this is a quick guess, if you need to be certain, please parse the string and make sure no error is thrown.
-
-</details>
-
-<details><summary><code>compileTemplate: source => (context => Observable)</code></summary>
-
-This utility function will `tokenize`, `parseFromTokens` and `compileFromAST` in one go.
-
-</details>
-
-<details><summary><code>compileObjectTemplate: obj => (context => Observable)</code></summary>
-
-Compiles and combines all templates in an object or array recursively.
-
-</details>
-
-<details><summary><code>produceObservable: (source, context) => Observable</code></summary>
-
-This utility function will just `compileTemplate(source)(context)`.
-
-</details>
-
-<details><summary><code>produceObjectObservable: (obj, context) => Observable</code></summary>
-
-This utility function will just `compileObjectTemplate(source)(context)`.
-
-</details>
-
-<details><summary><code>resolveTemplate: (source, context) => Promise</code></summary>
-
-This creates a `Promise` awaiting the first value emitted by a template compiled from source directly when applied with the given context.
-
-</details>
-
-<details><summary><code>resolveObjectTemplate: (obj, context) => Promise</code></summary>
-
-Like `resolveTemplate` but for object templates, this `Promise`s the latest value of all template strings once they all have emitted at least once.
-
-</details>
-
-### Syntax
-
-**NOTE: Everything is an expression - returning either an observable or just a value.**
-
-<details><summary>Array <code>[foo, bar]</code></summary>
-
+```js
+{{ [{ [currentKey]: currentInput }] | map(currentlySelectedTransform | processResult(currentScheduler)) }}
 ```
+
+### Array `[foo, bar]`
+
+```js
 {{ [1] }}
 {{ [1, 2] }}
 {{ [foo, 2] }}
 ```
 
-</details>
+### Boolean `true` / `false`
 
-<details><summary>Function Call <code>foo(bar)</code></summary>
-
+```js
+{{ true }}
+{{ false }}
 ```
+
+### Function Call `foo(bar)`
+
+Note that no currying is performed.
+
+```js
 {{ of(1, 2) }}
 {{ seq(period, num) }}
 {{ mul(2)(3) }}
 ```
 
-</details>
+### Index `foo[bar]`
 
-
-<details><summary>Index <code>foo[bar]</code></summary>
-
-```
+```js
 {{ a[b] }}
 ```
 
-</details>
+### Member `foo.bar`
 
-<details><summary>Member <code>foo.bar</code></summary>
-
-```
+```js
 {{ foo.bar }}
 ```
 
-</details>
+### Null `null`
 
-<details><summary>Null <code>null</code></summary>
-
-```
+```js
 {{ null }}
 ```
 
-</details>
-
-<details><summary>Number <code>1.23</code></summary>
+### Number `1.23`
 
 WARNING: this does not support scientific notation like `1e3`
 
-```
+```js
 {{ 12 }}
 {{ 1.2345 }}
 ```
 
-</details>
-
-<details><summary>Object <code>{ foo: foo, [bar]: baz }</code></summary>
+### Object `{ foo: foo, [bar]: baz }`
 
 Supports both static and dynamic keys
 
 WARNING: does not yet support the same-name utility syntax `{ foo }`
 
-```
+```js
 {{ {} }}
 {{ { a: 1 } }}
 {{ { a: foo } }}
@@ -174,29 +92,23 @@ WARNING: does not yet support the same-name utility syntax `{ foo }`
 {{ { a: 1, [b]: 2 } }}
 ```
 
-</details>
+### Pipe `foo | bar`
 
-<details><summary>Pipe <code>foo | bar</code></summary>
-
-```
+```js
 {{ 2 | mul(3) }}
 {{ "ff" | parseHex }}
 {{ stream | sub(5) | mul(2) | add(1) }}
 {{ x | map(mul(2) | add(1)) }}
 ```
 
-</details>
+### Reference `foo`
 
-<details><summary>Reference <code>foo</code></summary>
-
-```
+```js
 {{ a }}
 {{ myVar }}
 ```
 
-</details>
-
-<details><summary>String <code>"foo {{ bar }}"</code></summary>
+### String `"foo {{ bar }}"`
 
 A bit more complicated, since nested templates are supported.
 Strings can be delimited by either `'`s or `"`s.
@@ -205,7 +117,7 @@ WARNING: templates inside non-empty strings will have to convert all emissions t
 
 WARNING: can't use ` delimiters
 
-```
+```js
 {{ "" }}  // ''
 {{ '' }}  // ''
 {{ "a" }} // 'a'
@@ -216,36 +128,146 @@ WARNING: can't use ` delimiters
 {{ "hell{{ "o" }} world" }} // 'hello world'
 ```
 
-</details>
+### Undefined `undefined`
 
-<details><summary>Undefined <code>undefined</code></summary>
-
-```
+```js
 {{ undefined }}
 ```
 
-</details>
+## :candle: Core API
+
+The core design is really simple.
+
+1. Tokenize (look at source code and find where the tokens are - information is found)
+2. Parse (take the tokens and produce a tree structure of nodes - relationships appear)
+3. Compile (create a factory function, mapping a context to an observable - code becomes callable)
+4. Inject a context (inject streams and values to produce a composite stream as defined in the template)
+5. Subscribe the stream! :bowling:
+
+For more information, watch the destroyallsoftware screencast linked in the bottom for a terrific 30 minute short introduction on writing a compiler from scratch.
+
+### `tokenize`: `(source) => tokens` (throws on unexpected token)
+
+Tokenizes the source string and returns an `Array` of tokens.
+
+Notably, a string is not a string until it has been parsed.
+An actual string is formed during parsing.
+
+- `type`: `String`; For a list of possible values, see `tokenize.js`
+- `start`: `Number`; The index in the source string where the token starts.
+- `body`: `String`; The full slice of text as copied from the source string.
+
+### `parseFromTokens`: `(source, tokens) => AST` (throws on invalid semantics)
+
+Parses tokens into an abstract syntax tree - a recursive structure of nodes.
+
+A node has the following shape: `{ type, ...properties }`
+
+- `func` - a function (`path`: optional parent node, `args` - array of nodes called with)
+- `ref` - a reference (`name`: `token.body`, `col`: `token.start`)
+- `boolean` - a boolean (`value`: the parsed `Boolean` value)
+- `object` - an object (`props`: array of `{ path, expr }` nodes - there are two types of `path`, see below)
+  - `constprop` - a statically named property (`value`: the static name of the property)
+  - `dynprop` - a dynamically named property (`expr`: a node representing an expression for the property name)
+- `stringparts` - a string possibly containing a nxtpression (`parts`: a list of nodes of varying type)
+  - `string` - a string literal (`body`: the raw string value)
+- `index` - an index into something (`node`: the node representing something to index a property off of, `expr`: the node representing the value to index off of the thing)
+- `member` - a member access (`node`: the node representing something to access a property off of, `property`: the name of the property to access)
+- `array` - an array (`items`: array of nodes reprenting the values in the array)
+- `number` - a number (`value`: the parsed `Number` value)
+- `pipe` - a function piping the left hand side to the right hand side (`parts`: the nodes representing the objects to pipe through. Most of the time, the first node will reference a value from context and the other nodes are functions to pipe that value through)
+- `null` - the value `null` (n/a)
+- `undefined` - the value `undefined` (n/a)
+
+### `compileFromAST`: `(source, AST, options) => (context => Observable)` (throws on undefined variable access if enabled)
+
+Compiles a template string from an AST.
+
+The `options` object supports the following properties:
+
+- `throwOnUndefinedVariableAccess` - if `true`, will throw when a value referenced in the context is `undefined` (default: `false`)
+
+### `IGNORE`: `Symbol`
+
+Consider running `{{ 4 | ignoreEven | doSideEffect }}`, with `ignoreEven: x => x % 2 === 0 ? IGNORE : x`.
+This will not perform the side effect, because once an `IGNORE` symbol is discovered, the symbol will be emitted immediately.
+
+*WARNING*: this WILL still emit once - with the `IGNORE` symbol - in order to ensure that observables complete.
+
+## :wheelchair: :joystick: Utility API
+
+There are some nice utilities to make your life easier. These are what you'll use most of the time.
+
+Basically the combination of
+
+- compiling / producing an observable from / directly resolving values
+- string template / object template
+
+An object template is a recursive structure of arrays and objects containing template strings, e.g.
+
+```js
+{
+  a: [{ b: '{{ 1 }}' }],
+  c: { d: '{{ 2 }}' },
+  e: '{{ 3 }}'
+} // => { a: [{ b: 1 }], c: { d: 2 }, e: 3 }
+```
+
+However, it does not work recursively in returned values
+
+```js
+resolveTemplate({ a: '{{ t }}' }, { t: '{{ 1 }}' }) // { a: '{{ 1 }}' }
+```
+
+Also, a heuristic to determine whether a string might contain a template.
+
+### `isNotATemplate`: `(string) => Boolean` (does not throw)
+
+If `string` is not a `String` containing `'{{'`, this will return `true`.
+
+*WARNING*: this is only a heuristic when returning `false`. If you need to be certain, please parse the string and make sure no error is thrown.
+
+### `parseFromSource`: `(source) => AST` (throws on unexpected token or invalid semantics)
+
+This utility function will `tokenize` and `parseFromTokens` in one go.
+
+### `compileTemplate`: `(source, options) => (context => Observable)` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
+
+This utility function will `tokenize`, `parseFromTokens` and `compileFromAST` in one go.
+For a list of options, see `compileFromAST`.
+
+### `compileObjectTemplate`: `(obj, options) => (context => Observable)` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
+
+Compiles and combines all templates in an object or array recursively.
+For a list of options, see `compileFromAST`.
+
+### `produceObservable`: `(source, context, options) => Observable` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
+
+This utility function will just `compileTemplate(source, options)(context)`.
+For a list of options, see `compileFromAST`.
+
+### `produceObjectObservable`: `(obj, context, options) => Observable` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
+
+This utility function will just `compileObjectTemplate(source, options)(context)`.
+For a list of options, see `compileFromAST`.
+
+### `resolveTemplate`: `(source, context, options) => Promise` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
+
+This creates a `Promise` awaiting the first value emitted by a template compiled from source directly when applied with the given context.
+For a list of options, see `compileFromAST`.
+
+### `resolveObjectTemplate`: `(obj, context, options) => Promise` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
+
+Like `resolveTemplate` but for object templates, this `Promise`s the latest value of all template strings once they all have emitted at least once.
+For a list of options, see `compileFromAST`.
 
 ## :electric_plug: Installation
 
 With [npm](https://www.npmjs.com/get-npm) installed;
 
-```
+```sh
 npm i nxtpression
 ```
-
-## :hourglass_flowing_sand: Roadmap
-
-### Current Priorities
-
-- add a standard library
-- verify conformance with https://github.com/nxtedition/nxt-lib/blob/master/src/util/template/
-- add logical branching
-
-### For Future Consideration
-
-- visual node based editor inspired by UE4 blueprints
-- monaco integration
 
 ## :trophy: Credit
 
