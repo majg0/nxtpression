@@ -144,7 +144,7 @@ The core design is really simple.
 4. Inject a context (inject streams and values to produce a composite stream as defined in the template)
 5. Subscribe the stream! :bowling:
 
-For more information, watch the destroyallsoftware screencast linked in the bottom for a terrific 30 minute short introduction on writing a compiler from scratch.
+For more information on steps 1-3, watch the destroyallsoftware screencast linked in the bottom for a terrific 30 minute short introduction on writing a compiler from scratch. For more information on steps 4-5, learn RxJS.
 
 ### `tokenize`: `(source) => tokens` (throws on unexpected token)
 
