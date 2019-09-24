@@ -238,7 +238,7 @@ An object template is a recursive structure of arrays and objects containing tem
 However, it does not work recursively in returned values
 
 ```js
-resolveTemplate({ a: '{{ t }}' }, { t: '{{ 1 }}' }) // { a: '{{ 1 }}' }
+resolveObjectTemplate({ a: '{{ t }}' }, { t: '{{ 1 }}' }) // { a: '{{ 1 }}' }
 ```
 
 ### `compileObjectTemplate`: `(obj, options) => (context => Observable)` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
