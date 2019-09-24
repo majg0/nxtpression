@@ -196,12 +196,34 @@ This will not perform the side effect, because once an `IGNORE` symbol is discov
 
 ## :wheelchair: :joystick: Utility API
 
-There are some nice utilities to make your life easier. These are what you'll use most of the time.
+There are some nice utilities to make your life easier. Basically just some wrappers around the core API and a heuristic to help determining whether a string might contain a template.
 
-Basically the combination of
+### `isNotATemplate`: `(string) => Boolean` (does not throw)
 
-- compiling / producing an observable from / directly resolving values
-- string template / object template
+If `string` is not a `String` containing `'{{'`, this will return `true`.
+
+*WARNING*: this is only a heuristic when returning `false`. If you need to be certain, please parse the string and make sure no error is thrown.
+
+### `parseFromSource`: `(source) => AST` (throws on unexpected token or invalid semantics)
+
+This utility function will `tokenize` and `parseFromTokens` in one go.
+
+### `compileTemplate`: `(source, options) => (context => Observable)` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
+
+This utility function will `tokenize`, `parseFromTokens` and `compileFromAST` in one go.
+For a list of options, see `compileFromAST`.
+
+### `produceObservable`: `(source, context, options) => Observable` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
+
+This utility function will just `compileTemplate(source, options)(context)`.
+For a list of options, see `compileFromAST`.
+
+### `resolveTemplate`: `(source, context, options) => Promise` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
+
+This creates a `Promise` awaiting the first value emitted by a template compiled from source directly when applied with the given context.
+For a list of options, see `compileFromAST`.
+
+## :grapes: Object Templates API
 
 An object template is a recursive structure of arrays and objects containing template strings, e.g.
 
@@ -219,41 +241,14 @@ However, it does not work recursively in returned values
 resolveTemplate({ a: '{{ t }}' }, { t: '{{ 1 }}' }) // { a: '{{ 1 }}' }
 ```
 
-Also, a heuristic to determine whether a string might contain a template.
-
-### `isNotATemplate`: `(string) => Boolean` (does not throw)
-
-If `string` is not a `String` containing `'{{'`, this will return `true`.
-
-*WARNING*: this is only a heuristic when returning `false`. If you need to be certain, please parse the string and make sure no error is thrown.
-
-### `parseFromSource`: `(source) => AST` (throws on unexpected token or invalid semantics)
-
-This utility function will `tokenize` and `parseFromTokens` in one go.
-
-### `compileTemplate`: `(source, options) => (context => Observable)` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
-
-This utility function will `tokenize`, `parseFromTokens` and `compileFromAST` in one go.
-For a list of options, see `compileFromAST`.
-
 ### `compileObjectTemplate`: `(obj, options) => (context => Observable)` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
 
 Compiles and combines all templates in an object or array recursively.
 For a list of options, see `compileFromAST`.
 
-### `produceObservable`: `(source, context, options) => Observable` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
-
-This utility function will just `compileTemplate(source, options)(context)`.
-For a list of options, see `compileFromAST`.
-
 ### `produceObjectObservable`: `(obj, context, options) => Observable` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
 
 This utility function will just `compileObjectTemplate(source, options)(context)`.
-For a list of options, see `compileFromAST`.
-
-### `resolveTemplate`: `(source, context, options) => Promise` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
-
-This creates a `Promise` awaiting the first value emitted by a template compiled from source directly when applied with the given context.
 For a list of options, see `compileFromAST`.
 
 ### `resolveObjectTemplate`: `(obj, context, options) => Promise` (throws on unexpected token or invalid semantics or - if enabled, undefined variable access)
