@@ -10,7 +10,7 @@ module.exports = {
   parseFromSource,
   compileFromAST,
   IGNORE,
-  isTemplate,
+  isNotATemplate,
   compileTemplate,
   compileObjectTemplate,
   produceObservable,
@@ -19,46 +19,46 @@ module.exports = {
   resolveObjectTemplate
 }
 
-function isTemplate (value) {
-  return typeof value === 'string' && value.indexOf('{{') !== -1
+function isNotATemplate (value) {
+  return typeof value !== 'string' || value.indexOf('{{') !== -1
 }
 
 function parseFromSource (source) {
   return parseFromTokens(source, tokenize(source))
 }
 
-function compileTemplate (source) {
-  return compileFromAST(source, parseFromSource(source))
+function compileTemplate (source, options) {
+  return compileFromAST(source, parseFromSource(source), options)
 }
 
-function produceObservable (source, context) {
-  return compileTemplate(source)(context)
+function produceObservable (source, context, options) {
+  return compileTemplate(source, options)(context)
 }
 
-function produceObjectObservable (source, context) {
-  return compileObjectTemplate(source)(context)
+function produceObjectObservable (source, context, options) {
+  return compileObjectTemplate(source, options)(context)
 }
 
-async function resolveTemplate (source, context) {
-  if (!isTemplate(source)) {
+async function resolveTemplate (source, context, options) {
+  if (isNotATemplate(source)) {
     return Promise.resolve(source)
   }
   try {
-    return produceObservable(source, context).pipe(first()).toPromise()
+    return produceObservable(source, context, options).pipe(first()).toPromise()
   } catch (err) {
     return Promise.reject(err)
   }
 }
 
-async function resolveObjectTemplate (obj, context) {
+async function resolveObjectTemplate (obj, context, options) {
   try {
-    return produceObjectObservable(obj, context).pipe(first()).toPromise()
+    return produceObjectObservable(obj, context, options).pipe(first()).toPromise()
   } catch (err) {
     return Promise.reject(err)
   }
 }
 
-function compileObjectTemplate (obj) {
+function compileObjectTemplate (obj, options) {
   if (!isPlainObject(obj)) {
     throw new Error('invalid argument')
   }
@@ -72,10 +72,10 @@ function compileObjectTemplate (obj) {
         const x = Array.isArray(v) ? [] : {}
         resolvers.push([pk, context => of(x)])
         compile(pk, v)
-      } else if (isTemplate(v)) {
-        resolvers.push([pk, compileTemplate(v)])
-      } else {
+      } else if (isNotATemplate(v)) {
         resolvers.push([pk, context => of(v)])
+      } else {
+        resolvers.push([pk, compileTemplate(v, options)])
       }
     }
   }

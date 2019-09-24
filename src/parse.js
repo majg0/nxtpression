@@ -60,7 +60,7 @@ function parseFromTokens (source, tokens) {
 
   function parseBoolean () {
     const token = consume()
-    return { type: 'boolean', value: token.body !== 'false', col: token.start }
+    return { type: 'boolean', value: token.body !== 'false' }
   }
 
   function parseObject () {

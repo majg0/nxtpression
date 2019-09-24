@@ -9,7 +9,9 @@ module.exports = {
   compileFromAST
 }
 
-function compileFromAST (source, root) {
+function compileFromAST (source, root, options) {
+  const { throwOnUndefinedVariableAccess } = options || {}
+
   const err = getErrorFormatter(source)
 
   const EXPR_MAP = {
@@ -49,7 +51,7 @@ function compileFromAST (source, root) {
   function compileRef ({ name, col }) {
     return context => {
       const value = context[name]
-      if (value === undefined) {
+      if (value === undefined && throwOnUndefinedVariableAccess) {
         throw new Error(err(`Undefined variable ${name}`, col))
       }
       return isObservable(value) ? value : of(value)
