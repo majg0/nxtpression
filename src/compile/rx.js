@@ -1,6 +1,6 @@
 const { Observable, combineLatest, isObservable, of } = require('rxjs')
 const { catchError, map, switchMap, withLatestFrom } = require('rxjs/operators')
-const { getErrorFormatter } = require('./util')
+const { getErrorFormatter } = require('../util')
 
 const IGNORE = Symbol('ignore')
 

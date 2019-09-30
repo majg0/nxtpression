@@ -11,9 +11,9 @@ async function runAsync (source, context, tests) {
     let i = 0
 
     if (typeof source === 'object' && source !== null) {
-      nxtpr.compileObjectTemplate(source)(context).subscribe(onNext, onError, onComplete)
+      nxtpr.rx.produceObjectObservable(source, context).subscribe(onNext, onError, onComplete)
     } else {
-      nxtpr.produceObservable(source, context).subscribe(onNext, onError, onComplete)
+      nxtpr.rx.produceObservable(source, context).subscribe(onNext, onError, onComplete)
     }
 
     function onNext (x) {

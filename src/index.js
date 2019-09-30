@@ -1,22 +1,50 @@
 const { combineLatest, of, throwError } = require('rxjs')
-const { first, map } = require('rxjs/operators')
+const { first, map, tap } = require('rxjs/operators')
 const { tokenize } = require('./tokenize')
 const { parseFromTokens } = require('./parse')
-const { IGNORE, compileFromAST } = require('./compiler')
+const { IGNORE, compileFromAST } = require('./compile/rx')
+const plain = require('./compile/rx')
 
 module.exports = {
   tokenize,
   parseFromTokens,
   parseFromSource,
-  compileFromAST,
   IGNORE,
   isNotATemplate,
-  compileTemplate,
-  compileObjectTemplate,
-  produceObservable,
-  produceObjectObservable,
-  resolveTemplate,
-  resolveObjectTemplate
+  plain: {
+    // TODO (refactor): make this easier on the eye
+    // TODO make plain optional peer dep / make this its own compiler frontend package?
+    compileFromAST: plain.compileFromAST,
+    compileTemplate: function (source, options) {
+      return module.exports.plain.compileFromAST(source, parseFromSource(source), options)
+    },
+    // runExpression: function* (source, props, onDirty, options) {
+    //   const run = module.exports.plain.compileTemplate(source, options)
+    //   const context = { props, data: {} }
+    //   let currentRefs = []
+
+    //   while (true) {
+    //     currentRefs = []
+    //     const { value, refs } = await run(context)
+    //     // unsub old refs?
+    //     currentRefs = refs
+    //     // register new refs?
+    //     Observable.merge(currentRefs.map(ref => ref.subscribe(() => onDirty(ref)))
+    //     yield value
+    //   }
+    // }
+  },
+  rx: {
+    // TODO rename functions / namespace them to clarify
+    // TODO make rxjs optional peer dep / make this its own compiler frontend package?
+    compileFromAST,
+    compileTemplate,
+    compileObjectTemplate,
+    produceObservable,
+    produceObjectObservable,
+    resolveTemplate,
+    resolveObjectTemplate
+  }
 }
 
 function isNotATemplate (value) {
