@@ -20,7 +20,7 @@ module.exports = {
 }
 
 function isNotATemplate (value) {
-  return typeof value !== 'string' || value.indexOf('{{') !== -1
+  return typeof value !== 'string' || value.indexOf('{{') === -1
 }
 
 function parseFromSource (source) {
